@@ -213,18 +213,26 @@ public class PCScreen extends ScreenAdapter {
         Label.LabelStyle lsUI = new Label.LabelStyle(uiFont, Color.WHITE);
         skin.add("ui", lsUI);
 
-        // Compact readable font for logs (default LibGDX font - much more compact than PressStart2P)
+        // Log font: default LibGDX monospace-like font, compact and very readable
         BitmapFont defaultFont = new BitmapFont();
-        defaultFont.setColor(new Color(0.9f, 0.88f, 0.78f, 1f));
-        defaultFont.getData().setScale(1.1f);
-        Label.LabelStyle logStyle = new Label.LabelStyle(defaultFont, new Color(0.9f, 0.88f, 0.78f, 1f));
+        defaultFont.setColor(new Color(0.85f, 0.82f, 0.72f, 1f));
+        defaultFont.getData().setScale(1.0f);
+        Label.LabelStyle logStyle = new Label.LabelStyle(defaultFont, new Color(0.85f, 0.82f, 0.72f, 1f));
         skin.add("log", logStyle);
 
         ScrollPane.ScrollPaneStyle sps = new ScrollPane.ScrollPaneStyle();
         sps.background = new TextureRegionDrawable(new TextureRegion(darkTex));
         skin.add("default", sps);
 
+        // Sidebar background
+        Pixmap pm2 = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pm2.setColor(new Color(0.10f, 0.08f, 0.04f, 0.88f));
+        pm2.fill();
+        Texture sidebarTex = new Texture(pm2);
+        pm2.dispose();
+
         skin.add("panel-bg", new TextureRegionDrawable(new TextureRegion(darkTex)), TextureRegionDrawable.class);
+        skin.add("sidebar-bg", new TextureRegionDrawable(new TextureRegion(sidebarTex)), TextureRegionDrawable.class);
     }
 
     private Label speedLabel;
@@ -234,6 +242,7 @@ public class PCScreen extends ScreenAdapter {
         Gdx.input.setInputProcessor(stage);
 
         TextureRegionDrawable darkBg = skin.get("panel-bg", TextureRegionDrawable.class);
+        TextureRegionDrawable sidebarBg = skin.get("sidebar-bg", TextureRegionDrawable.class);
 
         Table root = new Table();
         root.setFillParent(true);
@@ -305,67 +314,102 @@ public class PCScreen extends ScreenAdapter {
         topBar.add(playBtn).pad(6);
         topBar.add(pauseBtn).pad(6);
         topBar.add(stopBtn).pad(6).padRight(10);
-        root.add(topBar).fillX().row();
+        root.add(topBar).fillX().colspan(2).row();
 
-        // === Middle: fully transparent for pixel art ===
-        root.add().expand().fill().row();
+        // === Main area: LEFT SIDEBAR + PIXEL ART ===
+        Table sidebar = new Table();
+        sidebar.setBackground(sidebarBg);
+        sidebar.top().pad(8);
 
-        // === Bottom: STATUS ROW (compact) then FULL-WIDTH LOG ===
-        Table bottomSection = new Table();
-        bottomSection.setBackground(darkBg);
+        // --- MINER section ---
+        Label minerTitle = new Label("PRODUCTOR", skin);
+        minerTitle.setColor(GOLD);
+        sidebar.add(minerTitle).left().row();
+        sidebar.add().height(4).row();
 
-        // --- Status row: all info in one horizontal line ---
-        Table statusRow = new Table();
-        statusRow.left().pad(6, 10, 4, 10);
-
+        Table minerRow = new Table();
+        minerRow.left();
         minerStatusLabel = new Label("IDLE", skin);
+        minerStatusLabel.setColor(Color.WHITE);
+        minerRow.add(new Label("Estado: ", skin)).left();
+        minerRow.add(minerStatusLabel).left().row();
+        sidebar.add(minerRow).left().fillX().row();
+
+        Table numRow = new Table();
+        numRow.left();
         minerNumberLabel = new Label("-", skin);
-        bufferCountLabel = new Label("0/12", skin);
+        minerNumberLabel.setColor(Color.WHITE);
+        numRow.add(new Label("Ultimo: ", skin)).left();
+        numRow.add(minerNumberLabel).left();
+        sidebar.add(numRow).left().fillX().row();
 
-        statusRow.add(new Label("MINER:", skin)).left().padRight(4);
-        statusRow.add(minerStatusLabel).left().padRight(12);
-        statusRow.add(new Label("NUM:", skin)).left().padRight(4);
-        statusRow.add(minerNumberLabel).left().padRight(12);
-        statusRow.add(new Label("BUF:", skin)).left().padRight(4);
-        statusRow.add(bufferCountLabel).left().padRight(20);
+        Table bufRow = new Table();
+        bufRow.left();
+        bufferCountLabel = new Label("0/" + BUFFER_SIZE, skin);
+        bufferCountLabel.setColor(Color.WHITE);
+        bufRow.add(new Label("Buffer: ", skin)).left();
+        bufRow.add(bufferCountLabel).left();
+        sidebar.add(bufRow).left().fillX().row();
 
-        // Consumer scores inline
-        String[] names = {"EVEN", "ODD", "PRIME"};
+        sidebar.add().height(4).row();
+        addSeparator(sidebar);
+
+        // --- CONSUMERS section ---
+        Label consTitle = new Label("CONSUMIDORES", skin);
+        consTitle.setColor(GOLD);
+        sidebar.add(consTitle).left().row();
+        sidebar.add().height(4).row();
+
+        String[] names = {"PAR", "IMPAR", "PRIMO"};
         Color[] nameColors = {new Color(0.4f, 0.8f, 0.9f, 1f), new Color(0.5f, 0.9f, 0.4f, 1f), new Color(1f, 0.8f, 0.3f, 1f)};
         for (int i = 0; i < 3; i++) {
-            robotScoreLabels[i] = new Label("0", skin);
-            robotStatusLabels[i] = new Label("IDLE", skin);
+            Table cRow = new Table();
+            cRow.left();
             Label nameLabel = new Label(names[i] + ":", skin);
             nameLabel.setColor(nameColors[i]);
-            statusRow.add(nameLabel).left().padRight(2);
-            statusRow.add(robotScoreLabels[i]).left().padRight(4);
-            statusRow.add(robotStatusLabels[i]).left().padRight(12);
+            robotScoreLabels[i] = new Label("0", skin);
+            robotScoreLabels[i].setColor(Color.WHITE);
+            robotStatusLabels[i] = new Label("IDLE", skin);
+            robotStatusLabels[i].setColor(new Color(0.6f, 0.6f, 0.6f, 1f));
+
+            cRow.add(nameLabel).left().width(90);
+            cRow.add(robotScoreLabels[i]).left().width(60);
+            cRow.add(robotStatusLabels[i]).left();
+            sidebar.add(cRow).left().fillX().row();
+            sidebar.add().height(2).row();
         }
 
-        bottomSection.add(statusRow).fillX().left().row();
+        sidebar.add().height(4).row();
+        addSeparator(sidebar);
 
-        // --- Separator line ---
-        Pixmap linePm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        linePm.setColor(new Color(0.3f, 0.25f, 0.15f, 0.6f));
-        linePm.fill();
-        Texture lineTex = new Texture(linePm);
-        linePm.dispose();
-        Table separator = new Table();
-        separator.setBackground(new TextureRegionDrawable(new TextureRegion(lineTex)));
-        bottomSection.add(separator).fillX().height(1).padLeft(8).padRight(8).row();
+        // --- LOG section ---
+        Label logTitle = new Label("LOG", skin);
+        logTitle.setColor(GOLD);
+        sidebar.add(logTitle).left().padTop(2).padBottom(2).row();
 
-        // --- Log area: full width, scrollable ---
         logLabel = new Label("", skin, "log");
         logLabel.setWrap(true);
         logScrollPane = new ScrollPane(logLabel, skin);
         logScrollPane.setFadeScrollBars(false);
         logScrollPane.setScrollingDisabled(true, false);
+        sidebar.add(logScrollPane).expand().fill().padTop(2).row();
 
-        bottomSection.add(logScrollPane).expand().fill().pad(4, 8, 6, 8);
-
-        root.add(bottomSection).fillX().height(260).pad(2);
+        // Add sidebar and pixel art area
+        root.add(sidebar).width(300).expandY().fillY();
+        root.add().expand().fill(); // pixel art area (transparent)
 
         stage.addActor(root);
+    }
+
+    private void addSeparator(Table parent) {
+        Pixmap linePm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        linePm.setColor(new Color(0.35f, 0.28f, 0.15f, 0.6f));
+        linePm.fill();
+        Texture lineTex = new Texture(linePm);
+        linePm.dispose();
+        Table sep = new Table();
+        sep.setBackground(new TextureRegionDrawable(new TextureRegion(lineTex)));
+        parent.add(sep).fillX().height(1).padTop(4).padBottom(4).row();
     }
 
     private static final float[] SPEED_OPTIONS = {0.25f, 0.5f, 1f, 2f, 4f};

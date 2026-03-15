@@ -68,14 +68,16 @@ public class DPScreen extends ScreenAdapter {
     private BitmapFont uiFont;
     private BitmapFont smallFont;
     private BitmapFont logFont;
+    private BitmapFont sidebarFont;
     private Skin skin;
     private Label[] stateLabels;
     private Label[] forkLabels;
-    private VerticalGroup stateGroup;
+    private Table stateContainer;
+    private Label nLabel;
     private final List<String> logMessages = new ArrayList<>();
     private Label logLabel;
     private ScrollPane logScrollPane;
-    private static final int MAX_LOG = 50;
+    private static final int MAX_LOG = 100;
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     // Scale 3 = 366x250 pixel art space (more detail than scale 4)
@@ -134,12 +136,12 @@ public class DPScreen extends ScreenAdapter {
         p.borderColor = new Color(0.1f, 0.05f, 0.0f, 1f);
         smallFont = gen.generateFont(p);
 
-        // Smaller font for logs
-        p.size = 10;
+        // Sidebar font (smaller for state info)
+        p.size = 11;
         p.color = new Color(0.9f, 0.88f, 0.78f, 1f);
         p.borderWidth = 1f;
         p.borderColor = new Color(0.08f, 0.04f, 0.0f, 1f);
-        logFont = gen.generateFont(p);
+        sidebarFont = gen.generateFont(p);
 
         gen.dispose();
 
@@ -194,18 +196,30 @@ public class DPScreen extends ScreenAdapter {
         Label.LabelStyle lsUI = new Label.LabelStyle(uiFont, Color.WHITE);
         skin.add("ui", lsUI);
 
-        // Compact readable font for logs (default LibGDX font)
+        // Sidebar label style
+        Label.LabelStyle sidebarStyle = new Label.LabelStyle(sidebarFont, new Color(0.9f, 0.88f, 0.78f, 1f));
+        skin.add("sidebar", sidebarStyle);
+
+        // Log font: default LibGDX font, compact and readable
         BitmapFont defaultFont = new BitmapFont();
-        defaultFont.setColor(new Color(0.9f, 0.88f, 0.78f, 1f));
-        defaultFont.getData().setScale(1.1f);
-        Label.LabelStyle logStyle = new Label.LabelStyle(defaultFont, new Color(0.9f, 0.88f, 0.78f, 1f));
+        defaultFont.setColor(new Color(0.85f, 0.82f, 0.72f, 1f));
+        defaultFont.getData().setScale(1.0f);
+        Label.LabelStyle logStyle = new Label.LabelStyle(defaultFont, new Color(0.85f, 0.82f, 0.72f, 1f));
         skin.add("log", logStyle);
 
         ScrollPane.ScrollPaneStyle sps = new ScrollPane.ScrollPaneStyle();
         sps.background = new TextureRegionDrawable(new TextureRegion(darkTex));
         skin.add("default", sps);
 
+        // Lighter panel for sidebar
+        Pixmap pm2 = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pm2.setColor(new Color(0.10f, 0.08f, 0.04f, 0.88f));
+        pm2.fill();
+        Texture sidebarTex = new Texture(pm2);
+        pm2.dispose();
+
         skin.add("panel-bg", new TextureRegionDrawable(new TextureRegion(darkTex)), TextureRegionDrawable.class);
+        skin.add("sidebar-bg", new TextureRegionDrawable(new TextureRegion(sidebarTex)), TextureRegionDrawable.class);
     }
 
     private Label speedLabel;
@@ -218,6 +232,7 @@ public class DPScreen extends ScreenAdapter {
         Gdx.input.setInputProcessor(stage);
 
         TextureRegionDrawable darkBg = skin.get("panel-bg", TextureRegionDrawable.class);
+        TextureRegionDrawable sidebarBg = skin.get("sidebar-bg", TextureRegionDrawable.class);
 
         Table root = new Table();
         root.setFillParent(true);
@@ -288,60 +303,128 @@ public class DPScreen extends ScreenAdapter {
         topBar.add(playBtn).pad(6);
         topBar.add(pauseBtn).pad(6);
         topBar.add(stopBtn).pad(6).padRight(10);
-        root.add(topBar).fillX().row();
+        root.add(topBar).fillX().colspan(2).row();
 
-        // === Middle: fully transparent for pixel art ===
-        root.add().expand().fill().row();
+        // === Main area: LEFT SIDEBAR + PIXEL ART ===
+        // Left sidebar with N selector, states, log
+        Table sidebar = new Table();
+        sidebar.setBackground(sidebarBg);
+        sidebar.top().pad(8);
 
-        // === Bottom: STATUS ROW (compact) then FULL-WIDTH LOG ===
-        Table bottomSection = new Table();
-        bottomSection.setBackground(darkBg);
+        // --- N philosopher selector ---
+        Table nRow = new Table();
+        Label nTitle = new Label("FILOSOFOS", skin, "sidebar");
+        nTitle.setColor(GOLD);
+        TextButton nDown = new TextButton(" - ", skin);
+        TextButton nUp = new TextButton(" + ", skin);
+        nLabel = new Label(String.valueOf(config.getNumFilosofos()), skin, "sidebar");
+        nLabel.setColor(Color.WHITE);
 
-        // --- Status row: philosophers and forks in one horizontal line ---
-        Table statusRow = new Table();
-        statusRow.left().pad(6, 10, 4, 10);
+        nDown.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
+                if (!running) {
+                    config.setNumFilosofos(config.getNumFilosofos() - 1);
+                    nLabel.setText(String.valueOf(config.getNumFilosofos()));
+                    rebuildSidebarStates();
+                }
+            }
+        });
+        nUp.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
+                if (!running) {
+                    config.setNumFilosofos(config.getNumFilosofos() + 1);
+                    nLabel.setText(String.valueOf(config.getNumFilosofos()));
+                    rebuildSidebarStates();
+                }
+            }
+        });
 
-        // Philosopher states inline
-        int N = config.getNumFilosofos();
-        stateLabels = new Label[N];
-        forkLabels = new Label[N];
+        nRow.add(nTitle).left().padRight(6);
+        nRow.add(nDown).size(28, 24).padRight(2);
+        nRow.add(nLabel).center().padLeft(4).padRight(4);
+        nRow.add(nUp).size(28, 24);
+        sidebar.add(nRow).left().fillX().row();
+        sidebar.add().height(6).row();
 
-        for (int i = 0; i < N; i++) {
-            stateLabels[i] = new Label("F" + i + ":PENSANDO", skin);
-            statusRow.add(stateLabels[i]).left().padRight(10);
-        }
-        // Separator
-        statusRow.add(new Label("|", skin)).padLeft(6).padRight(6);
-        // Fork states inline
-        for (int i = 0; i < N; i++) {
-            forkLabels[i] = new Label("T" + i + ":libre", skin);
-            statusRow.add(forkLabels[i]).left().padRight(8);
-        }
+        // --- Separator ---
+        addSeparator(sidebar);
 
-        bottomSection.add(statusRow).fillX().left().row();
+        // --- State labels container (rebuilt when N changes) ---
+        stateContainer = new Table();
+        stateContainer.top().left();
+        rebuildSidebarStates();
 
-        // --- Separator line ---
-        Pixmap linePm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        linePm.setColor(new Color(0.3f, 0.25f, 0.15f, 0.6f));
-        linePm.fill();
-        Texture lineTex = new Texture(linePm);
-        linePm.dispose();
-        Table separator = new Table();
-        separator.setBackground(new TextureRegionDrawable(new TextureRegion(lineTex)));
-        bottomSection.add(separator).fillX().height(1).padLeft(8).padRight(8).row();
+        ScrollPane stateScroll = new ScrollPane(stateContainer);
+        stateScroll.setFadeScrollBars(true);
+        stateScroll.setScrollingDisabled(true, false);
+        sidebar.add(stateScroll).expandX().fillX().height(180).row();
 
-        // --- Log area: full width, scrollable ---
+        // --- Separator ---
+        addSeparator(sidebar);
+
+        // --- Log header ---
+        Label logTitle = new Label("LOG", skin, "sidebar");
+        logTitle.setColor(GOLD);
+        sidebar.add(logTitle).left().padTop(4).padBottom(2).row();
+
+        // --- Log area: scrollable ---
         logLabel = new Label("", skin, "log");
         logLabel.setWrap(true);
         logScrollPane = new ScrollPane(logLabel, skin);
         logScrollPane.setFadeScrollBars(false);
         logScrollPane.setScrollingDisabled(true, false);
+        sidebar.add(logScrollPane).expand().fill().padTop(2).row();
 
-        bottomSection.add(logScrollPane).expand().fill().pad(4, 8, 6, 8);
-
-        root.add(bottomSection).fillX().height(260).pad(2);
+        // Add sidebar and pixel art area
+        root.add(sidebar).width(280).expandY().fillY();
+        root.add().expand().fill(); // pixel art area (transparent)
 
         stage.addActor(root);
+    }
+
+    private void addSeparator(Table parent) {
+        Pixmap linePm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        linePm.setColor(new Color(0.35f, 0.28f, 0.15f, 0.6f));
+        linePm.fill();
+        Texture lineTex = new Texture(linePm);
+        linePm.dispose();
+        Table sep = new Table();
+        sep.setBackground(new TextureRegionDrawable(new TextureRegion(lineTex)));
+        parent.add(sep).fillX().height(1).padTop(4).padBottom(4).row();
+    }
+
+    private void rebuildSidebarStates() {
+        int N = config.getNumFilosofos();
+        stateLabels = new Label[N];
+        forkLabels = new Label[N];
+
+        if (stateContainer != null) {
+            stateContainer.clear();
+
+            // Philosopher header
+            Label phTitle = new Label("-- Filosofos --", skin, "sidebar");
+            phTitle.setColor(new Color(0.7f, 0.65f, 0.55f, 1f));
+            stateContainer.add(phTitle).left().colspan(2).padBottom(2).row();
+
+            for (int i = 0; i < N; i++) {
+                stateLabels[i] = new Label("F" + i + ": PENSANDO", skin, "sidebar");
+                stateLabels[i].setColor(TEAL);
+                stateContainer.add(stateLabels[i]).left().padBottom(1).row();
+            }
+
+            // Fork header
+            Label fkTitle = new Label("-- Tenedores --", skin, "sidebar");
+            fkTitle.setColor(new Color(0.7f, 0.65f, 0.55f, 1f));
+            stateContainer.add(fkTitle).left().padTop(4).padBottom(2).row();
+
+            for (int i = 0; i < N; i++) {
+                forkLabels[i] = new Label("T" + i + ": libre", skin, "sidebar");
+                forkLabels[i].setColor(LT_GREEN);
+                stateContainer.add(forkLabels[i]).left().padBottom(1).row();
+            }
+        }
     }
 
     private void applySpeed() {
@@ -357,12 +440,7 @@ public class DPScreen extends ScreenAdapter {
     }
 
     private void rebuildStateLabels() {
-        int N = config.getNumFilosofos();
-        if (stateLabels == null || stateLabels.length != N) return;
-        for (int i = 0; i < N; i++) {
-            stateLabels[i].setText("F" + i + ":PENSANDO");
-            forkLabels[i].setText("T" + i + ":libre");
-        }
+        rebuildSidebarStates();
     }
 
     @Override
@@ -596,15 +674,26 @@ public class DPScreen extends ScreenAdapter {
                 int forkHolder = snapshot[N + i];
 
                 switch (estado) {
-                    case PENSANDO -> stateLabels[i].setText("F" + i + ": PENSANDO");
-                    case ESPERANDO -> stateLabels[i].setText("F" + i + ": ESPERANDO");
-                    case COMIENDO -> stateLabels[i].setText("F" + i + ": COMIENDO");
+                    case PENSANDO -> {
+                        stateLabels[i].setText("F" + i + ": PENSANDO");
+                        stateLabels[i].setColor(TEAL);
+                    }
+                    case ESPERANDO -> {
+                        stateLabels[i].setText("F" + i + ": ESPERANDO");
+                        stateLabels[i].setColor(GOLD);
+                    }
+                    case COMIENDO -> {
+                        stateLabels[i].setText("F" + i + ": COMIENDO");
+                        stateLabels[i].setColor(LT_GREEN);
+                    }
                 }
 
                 if (forkHolder >= 0) {
                     forkLabels[i].setText("T" + i + ": F" + forkHolder);
+                    forkLabels[i].setColor(BRIGHT_RED);
                 } else {
                     forkLabels[i].setText("T" + i + ": libre");
+                    forkLabels[i].setColor(LT_GREEN);
                 }
             }
         });
