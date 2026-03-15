@@ -1,71 +1,53 @@
 package gt.edu.url.so.proyectosistemasoperativos.producerconsumer;
 
-import gt.edu.url.so.proyectosistemasoperativos.common.AnimationUtils;
 import gt.edu.url.so.proyectosistemasoperativos.common.LogPanel;
-import javafx.animation.Animation;
-import javafx.animation.FadeTransition;
-import javafx.animation.KeyFrame;
-import javafx.animation.RotateTransition;
-import javafx.animation.Timeline;
+import gt.edu.url.so.proyectosistemasoperativos.common.PixelGameCanvas;
+import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.Slider;
-import javafx.scene.effect.DropShadow;
+import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
 import java.util.List;
 
+import static gt.edu.url.so.proyectosistemasoperativos.common.PixelGameCanvas.*;
+
 public class PCAnimationView extends BorderPane {
 
-    private static final Color COLOR_ACTIVE     = Color.web("#2cb67d");
-    private static final Color COLOR_PAR        = Color.web("#7f5af0");
-    private static final Color COLOR_IMPAR      = Color.web("#2cb67d");
-    private static final Color COLOR_PRIMO      = Color.web("#ff8906");
-    private static final Color COLOR_SLOT_EMPTY = Color.web("#1a1a2e");
-    private static final Color COLOR_SLOT_BORDER= Color.web("#393b52");
+    // ── Pixel Art Color Scheme ──
+    private static final Color COLOR_PAR   = TEAL;
+    private static final Color COLOR_IMPAR = GREEN;
+    private static final Color COLOR_PRIMO = ORANGE;
 
     private final PCController controller;
     private final LogPanel logPanel;
+    private PixelGameCanvas canvas;
 
-    // Producer visual
-    private final Label producerEmoji = new Label("\uD83D\uDC77");
-    private final Label producerLabel = new Label("PRODUCTOR");
-    private final Label producerStatus = new Label("\u23F8 Idle");
-    private final Label producerNumero = new Label("");
-    private final Label smokeLabel = new Label("");
-    private FadeTransition producerPulse;
+    // ── Animation state ──
+    private int animFrame = 0;
+    private int minerState = 0;  // 0=idle, 1=mining-up, 2=mining-down, 3=blocked, 4=done
+    private int[] robotStates = {0, 0, 0}; // 0=idle, 1=processing, 2=searching, 3=done
+    private int lastMinedNumber = -1;
 
-    // Buffer visual
-    private static final int BUFFER_SIZE = 12;
-    private final StackPane[] bufferSlotPanes = new StackPane[BUFFER_SIZE];
-    private final Rectangle[] bufferSlots = new Rectangle[BUFFER_SIZE];
-    private final Label[] bufferLabels = new Label[BUFFER_SIZE];
-    private final Label[] bufferEmojis = new Label[BUFFER_SIZE];
+    // ── Info panel labels ──
+    private final Label minerStatusLabel = new Label("IDLE");
+    private final Label minerNumberLabel = new Label("-");
+    private final Label bufferCountLabel = new Label("0/12");
     private final ProgressBar bufferProgress = new ProgressBar(0);
-    private final Label bufferCountLabel = new Label("0/" + BUFFER_SIZE);
+    private final Label[] robotNameLabels = new Label[3];
+    private final Label[] robotScoreLabels = new Label[3];
+    private final Label[] robotStatusLabels = new Label[3];
 
-    // Consumer visuals
-    private final Label[] consumerEmojis = new Label[3];
-    private final Label[] consumerNames = new Label[3];
-    private final Label[] consumerSumas = new Label[3];
-    private final Label[] consumerStatus = new Label[3];
-    private final Label[] consumerBinEmojis = new Label[3];
-    private final FadeTransition[] consumerPulses = new FadeTransition[3];
-
-    // Gear animations
-    private final Label gearLeft = new Label("\u2699\uFE0F");
-    private final Label gearRight = new Label("\u2699\uFE0F");
-
+    private static final int BUFFER_SIZE = 12;
     private Timeline updateTimeline;
+    private AnimationTimer gameLoop;
     private boolean paused = false;
+
+    // ── Canvas pixel grid (240 x 128 at scale 3 = 720x384 screen) ──
+    private static final int CW = 720, CH = 384;
 
     public PCAnimationView(Runnable onBack) {
         logPanel = new LogPanel();
@@ -73,66 +55,82 @@ public class PCAnimationView extends BorderPane {
         getStyleClass().add("pc-root");
         setupCallbacks();
         buildUI(onBack);
-        startUpdateLoop();
+        startGameLoop();
+        startBufferUpdateLoop();
     }
 
+    // ═══════════════════════════════════════
+    //  CALLBACKS
+    // ═══════════════════════════════════════
     private void setupCallbacks() {
         controller.setProducerCallbacks(
-                estado -> Platform.runLater(() -> updateProducerState(estado)),
+                estado -> Platform.runLater(() -> {
+                    switch (estado) {
+                        case "ACTIVO"    -> { minerState = 1; minerStatusLabel.setText("MINING..."); }
+                        case "BLOQUEADO" -> { minerState = 3; minerStatusLabel.setText("BELT FULL!"); }
+                        case "TERMINADO" -> { minerState = 4; minerStatusLabel.setText("DONE"); }
+                    }
+                }),
                 numero -> Platform.runLater(() -> {
-                    producerNumero.setText(String.valueOf(numero));
-                    smokeLabel.setText("\uD83D\uDCA8");
-                    FadeTransition ft = new FadeTransition(Duration.millis(600), smokeLabel);
-                    ft.setFromValue(1.0); ft.setToValue(0.0); ft.play();
+                    lastMinedNumber = numero;
+                    minerNumberLabel.setText(String.valueOf(numero));
                 })
         );
         controller.setConsumerParCallbacks(
-                estado -> Platform.runLater(() -> updateConsumerState(0, estado)),
-                (num, suma) -> Platform.runLater(() -> consumerSumas[0].setText("\u03A3 = " + suma))
+                estado -> Platform.runLater(() -> updateRobotState(0, estado)),
+                (num, suma) -> Platform.runLater(() -> robotScoreLabels[0].setText(String.valueOf(suma)))
         );
         controller.setConsumerImparCallbacks(
-                estado -> Platform.runLater(() -> updateConsumerState(1, estado)),
-                (num, suma) -> Platform.runLater(() -> consumerSumas[1].setText("\u03A3 = " + suma))
+                estado -> Platform.runLater(() -> updateRobotState(1, estado)),
+                (num, suma) -> Platform.runLater(() -> robotScoreLabels[1].setText(String.valueOf(suma)))
         );
         controller.setConsumerPrimoCallbacks(
-                estado -> Platform.runLater(() -> updateConsumerState(2, estado)),
-                (num, suma) -> Platform.runLater(() -> consumerSumas[2].setText("\u03A3 = " + suma))
+                estado -> Platform.runLater(() -> updateRobotState(2, estado)),
+                (num, suma) -> Platform.runLater(() -> robotScoreLabels[2].setText(String.valueOf(suma)))
         );
     }
 
+    private void updateRobotState(int idx, String estado) {
+        switch (estado) {
+            case "ACTIVO"    -> { robotStates[idx] = 1; robotStatusLabels[idx].setText("CONSUMING"); }
+            case "BLOQUEADO" -> { robotStates[idx] = 2; robotStatusLabels[idx].setText("SEARCHING"); }
+            case "TERMINADO" -> { robotStates[idx] = 3; robotStatusLabels[idx].setText("COMPLETE"); }
+        }
+    }
+
+    // ═══════════════════════════════════════
+    //  BUILD UI
+    // ═══════════════════════════════════════
     private void buildUI(Runnable onBack) {
-        // ---- TOP BAR ----
-        Button backBtn = new Button("\u25C0 Menu");
+        // ── TOP: Controls ──
+        Button backBtn = new Button("\u25C0 BACK");
         backBtn.getStyleClass().add("back-button");
         backBtn.setOnAction(e -> { cleanup(); onBack.run(); });
 
-        Label title = new Label("\uD83C\uDFED  FABRICA: PRODUCTOR - CONSUMIDOR  \uD83C\uDFED");
+        Label title = new Label("\uD83C\uDFED  PIXEL FACTORY  \uD83C\uDFED");
         title.getStyleClass().add("title-label");
 
-        HBox topBar = new HBox(20, backBtn, title);
+        HBox topBar = new HBox(14, backBtn, title);
         topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.getStyleClass().add("pc-top-bar");
 
-        // ---- CONTROLS ----
-        Button playBtn = new Button("\u25B6 Play");
-        Button pauseBtn = new Button("\u23F8 Pausa");
-        Button stopBtn = new Button("\u23F9 Stop");
+        Button playBtn  = new Button("\u25B6 START");
+        Button pauseBtn = new Button("\u23F8 PAUSE");
+        Button stopBtn  = new Button("\u23F9 STOP");
         playBtn.getStyleClass().add("control-button");
         pauseBtn.getStyleClass().add("control-button");
         stopBtn.getStyleClass().add("control-button");
 
-        Label speedLabel = new Label("\u26A1 Velocidad:");
+        Label speedLabel = new Label("\u26A1 SPD:");
         speedLabel.getStyleClass().add("speed-label");
         Slider speedSlider = new Slider(50, 2000, 500);
         speedSlider.setShowTickLabels(true);
-        speedSlider.setPrefWidth(200);
+        speedSlider.setPrefWidth(150);
         speedSlider.valueProperty().addListener((obs, o, n) -> controller.setDelay(n.intValue()));
 
         HBox controls = new HBox(10, playBtn, pauseBtn, stopBtn, speedLabel, speedSlider);
         controls.setAlignment(Pos.CENTER);
         controls.getStyleClass().add("pc-controls");
-
-        VBox topSection = new VBox(0, topBar, controls);
 
         playBtn.setOnAction(e -> {
             if (!controller.isRunning()) {
@@ -145,331 +143,288 @@ public class PCAnimationView extends BorderPane {
         });
         stopBtn.setOnAction(e -> { controller.detener(); paused = false; });
 
+        VBox topSection = new VBox(0, topBar, controls);
         setTop(topSection);
 
-        // ---- CENTER: Factory Floor ----
-        VBox producerBox = buildProducerBox();
-        VBox bufferBox = buildBufferBox();
-        VBox consumersBox = buildConsumersBox();
+        // ── CENTER: Canvas + Info Panel ──
+        canvas = new PixelGameCanvas(CW, CH, 3);
 
-        // Conveyor belt left
-        VBox conveyorLeft = buildConveyor("\u27A1\uFE0F");
-        VBox conveyorRight = buildConveyor("\u27A1\uFE0F");
+        VBox infoPanel = buildInfoPanel();
 
-        HBox centerContent = new HBox(8, producerBox, conveyorLeft, bufferBox, conveyorRight, consumersBox);
-        centerContent.setAlignment(Pos.CENTER);
-        centerContent.setPadding(new Insets(15, 15, 10, 15));
+        ScrollPane canvasScroll = new ScrollPane(canvas);
+        canvasScroll.getStyleClass().add("scroll-pane");
+        canvasScroll.setFitToHeight(true);
 
-        // Factory floor decoration
-        HBox floorDecor = new HBox(2);
-        floorDecor.setAlignment(Pos.CENTER);
-        for (int i = 0; i < 80; i++) {
-            Rectangle tile = new Rectangle(10, 6);
-            tile.setFill(i % 2 == 0 ? Color.web("#1a1a2e") : Color.web("#242838"));
-            tile.setStroke(Color.web("#393b52"));
-            tile.setStrokeWidth(0.5);
-            floorDecor.getChildren().add(tile);
-        }
+        HBox centerContent = new HBox(8, canvasScroll, infoPanel);
+        centerContent.setAlignment(Pos.TOP_CENTER);
+        centerContent.setPadding(new Insets(4, 8, 4, 8));
+        setCenter(centerContent);
 
-        VBox centerWrapper = new VBox(5, centerContent, floorDecor);
-        centerWrapper.setAlignment(Pos.CENTER);
-        setCenter(centerWrapper);
-
-        // ---- BOTTOM: Log ----
+        // ── BOTTOM: Log ──
         VBox bottomSection = new VBox(logPanel);
-        bottomSection.setPadding(new Insets(5, 15, 10, 15));
+        bottomSection.setPadding(new Insets(3, 10, 6, 10));
         setBottom(bottomSection);
     }
 
-    private VBox buildConveyor(String arrow) {
-        VBox conv = new VBox(2);
-        conv.setAlignment(Pos.CENTER);
-        for (int i = 0; i < 5; i++) {
-            Label arrowLabel = new Label(arrow);
-            arrowLabel.getStyleClass().add("conveyor-arrow");
-            // Animate each arrow with a fade
-            FadeTransition ft = new FadeTransition(Duration.millis(400 + i * 100), arrowLabel);
-            ft.setFromValue(0.3); ft.setToValue(1.0);
-            ft.setCycleCount(Animation.INDEFINITE); ft.setAutoReverse(true); ft.play();
-            conv.getChildren().add(arrowLabel);
-        }
-        // Animated dashed line
-        Line dashLine = new Line(0, 0, 0, 80);
-        dashLine.setStroke(Color.web("#ff8906"));
-        dashLine.setStrokeWidth(3);
-        dashLine.getStrokeDashArray().addAll(8.0, 6.0);
-        AnimationUtils.conveyorBelt(dashLine);
-        conv.getChildren().add(dashLine);
-        return conv;
-    }
+    private VBox buildInfoPanel() {
+        VBox panel = new VBox(6);
+        panel.setPadding(new Insets(8));
+        panel.setPrefWidth(220);
+        panel.setMinWidth(200);
+        panel.setStyle("-fx-background-color: #f0dcc0; -fx-border-color: #6b4c38; -fx-border-width: 4;");
 
-    private VBox buildProducerBox() {
-        // Big emoji worker
-        producerEmoji.getStyleClass().add("emoji-huge");
+        // Miner section
+        Label minerTitle = new Label("\u26CF MINER");
+        minerTitle.getStyleClass().add("section-title");
+        minerStatusLabel.getStyleClass().add("small-label");
 
-        // Smoke puff
-        smokeLabel.getStyleClass().add("smoke-label");
-
-        StackPane workerStack = new StackPane(producerEmoji, smokeLabel);
-        StackPane.setAlignment(smokeLabel, Pos.TOP_RIGHT);
-
-        // Machine structure
-        Label machineTop = new Label("\u2593\u2593\u2593\u2593\u2593\u2593");
-        machineTop.getStyleClass().add("machine-frame");
-
-        // Spinning gear
-        gearLeft.getStyleClass().add("emoji-gear");
-        RotateTransition gearSpin = new RotateTransition(Duration.seconds(3), gearLeft);
-        gearSpin.setByAngle(360); gearSpin.setCycleCount(Animation.INDEFINITE); gearSpin.play();
-
-        producerLabel.getStyleClass().add("producer-label");
-        producerStatus.getStyleClass().add("producer-status");
-        producerNumero.getStyleClass().add("producer-number");
-
-        Label numTitle = new Label("\uD83D\uDCE6 Ultimo:");
+        Label numTitle = new Label("MINED BLOCK:");
         numTitle.getStyleClass().add("small-label");
+        minerNumberLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #d4572a; -fx-font-family: 'Press Start 2P';");
 
-        VBox box = new VBox(6, machineTop, workerStack, gearLeft, producerLabel, producerStatus, numTitle, producerNumero);
-        box.setAlignment(Pos.CENTER);
-        box.getStyleClass().add("producer-box");
-        box.setPrefWidth(170);
-        return box;
-    }
-
-    private VBox buildBufferBox() {
-        Label bufferTitle = new Label("\uD83D\uDCE6 CINTA TRANSPORTADORA \uD83D\uDCE6");
-        bufferTitle.getStyleClass().add("buffer-title");
-
-        // Two rows of buffer slots (6+6)
-        HBox slotsRow1 = new HBox(5);
-        slotsRow1.setAlignment(Pos.CENTER);
-        HBox slotsRow2 = new HBox(5);
-        slotsRow2.setAlignment(Pos.CENTER);
-
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            bufferSlots[i] = new Rectangle(42, 42);
-            bufferSlots[i].setArcWidth(0);
-            bufferSlots[i].setArcHeight(0);
-            bufferSlots[i].setFill(COLOR_SLOT_EMPTY);
-            bufferSlots[i].setStroke(COLOR_SLOT_BORDER);
-            bufferSlots[i].setStrokeWidth(2);
-
-            bufferLabels[i] = new Label("");
-            bufferLabels[i].getStyleClass().add("buffer-slot-label");
-
-            bufferEmojis[i] = new Label("");
-            bufferEmojis[i].getStyleClass().add("buffer-slot-emoji");
-
-            VBox slotContent = new VBox(0, bufferEmojis[i], bufferLabels[i]);
-            slotContent.setAlignment(Pos.CENTER);
-            bufferSlotPanes[i] = new StackPane(bufferSlots[i], slotContent);
-
-            if (i < 6) slotsRow1.getChildren().add(bufferSlotPanes[i]);
-            else slotsRow2.getChildren().add(bufferSlotPanes[i]);
-        }
+        // Buffer section
+        Label bufTitle = new Label("\u2699 BUFFER");
+        bufTitle.getStyleClass().add("section-title");
+        bufferProgress.setPrefWidth(190);
+        bufferCountLabel.getStyleClass().add("small-label");
 
         // Legend
-        HBox legend = new HBox(12);
-        legend.setAlignment(Pos.CENTER);
-        legend.getChildren().addAll(
-            createLegendItem("\uD83D\uDFEA", "Par", COLOR_PAR),
-            createLegendItem("\uD83D\uDFE2", "Impar", COLOR_IMPAR),
-            createLegendItem("\uD83D\uDFE0", "Primo", COLOR_PRIMO)
-        );
+        Label legendTitle = new Label("LEGEND:");
+        legendTitle.getStyleClass().add("small-label");
+        Label legEven  = new Label("\u25A0 EVEN");
+        Label legOdd   = new Label("\u25A0 ODD");
+        Label legPrime = new Label("\u25A0 PRIME");
+        legEven.setTextFill(COLOR_PAR);   legEven.getStyleClass().add("legend-text");
+        legOdd.setTextFill(COLOR_IMPAR);  legOdd.getStyleClass().add("legend-text");
+        legPrime.setTextFill(COLOR_PRIMO); legPrime.getStyleClass().add("legend-text");
+        HBox legend = new HBox(8, legEven, legOdd, legPrime);
 
-        bufferProgress.setPrefWidth(300);
-        bufferCountLabel.getStyleClass().add("buffer-count");
+        // Robots section
+        Label robTitle = new Label("\uD83E\uDD16 ROBOTS");
+        robTitle.getStyleClass().add("section-title");
 
-        // Capacity bar label
-        Label capLabel = new Label("\u2588\u2588 Capacidad:");
-        capLabel.getStyleClass().add("small-label");
-
-        VBox box = new VBox(8, bufferTitle, slotsRow1, slotsRow2, legend, capLabel, bufferProgress, bufferCountLabel);
-        box.setAlignment(Pos.CENTER);
-        box.getStyleClass().add("buffer-box");
-        return box;
-    }
-
-    private HBox createLegendItem(String emoji, String text, Color color) {
-        Label emojiL = new Label(emoji);
-        emojiL.getStyleClass().add("legend-emoji");
-        Label textL = new Label(text);
-        textL.setTextFill(color);
-        textL.getStyleClass().add("legend-text");
-        HBox item = new HBox(3, emojiL, textL);
-        item.setAlignment(Pos.CENTER);
-        return item;
-    }
-
-    private VBox buildConsumersBox() {
-        String[] names   = {"\uD83D\uDFEA C1: PARES", "\uD83D\uDFE2 C2: IMPARES", "\uD83D\uDFE0 C3: PRIMOS"};
-        String[] emojis  = {"\uD83D\uDC68\u200D\uD83D\uDD27", "\uD83D\uDC69\u200D\uD83D\uDD27", "\uD83E\uDDD1\u200D\uD83D\uDCBB"};
-        String[] bins    = {"\uD83D\uDDF3\uFE0F", "\uD83D\uDDF3\uFE0F", "\uD83D\uDDF3\uFE0F"};
-        Color[]  colors  = {COLOR_PAR, COLOR_IMPAR, COLOR_PRIMO};
-        String[] nameClasses = {"consumer-name-par", "consumer-name-impar", "consumer-name-primo"};
-
-        // Spinning gear right
-        gearRight.getStyleClass().add("emoji-gear");
-        RotateTransition gearSpin2 = new RotateTransition(Duration.seconds(3), gearRight);
-        gearSpin2.setByAngle(-360); gearSpin2.setCycleCount(Animation.INDEFINITE); gearSpin2.play();
-
-        Label consTitle = new Label("\uD83D\uDC77 CONSUMIDORES \uD83D\uDC77");
-        consTitle.getStyleClass().add("section-title");
-
-        VBox consumersColumn = new VBox(8);
-        consumersColumn.setAlignment(Pos.CENTER);
-
+        String[] names  = {"BLUE [EVEN]", "GREEN [ODD]", "GOLD [PRIME]"};
+        Color[]  colors = {COLOR_PAR, COLOR_IMPAR, COLOR_PRIMO};
+        VBox robotsInfo = new VBox(4);
         for (int i = 0; i < 3; i++) {
-            consumerEmojis[i] = new Label(emojis[i]);
-            consumerEmojis[i].getStyleClass().add("emoji-medium");
+            robotNameLabels[i] = new Label(names[i]);
+            robotNameLabels[i].setTextFill(colors[i]);
+            robotNameLabels[i].getStyleClass().add("legend-text");
+            robotScoreLabels[i] = new Label("0");
+            robotScoreLabels[i].setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4a3728; -fx-font-family: 'Press Start 2P';");
+            robotStatusLabels[i] = new Label("IDLE");
+            robotStatusLabels[i].getStyleClass().add("small-label");
 
-            consumerBinEmojis[i] = new Label(bins[i]);
-            consumerBinEmojis[i].getStyleClass().add("emoji-small");
+            HBox scoreRow = new HBox(6, new Label("SUM:"), robotScoreLabels[i]);
+            scoreRow.setAlignment(Pos.CENTER_LEFT);
 
-            consumerNames[i] = new Label(names[i]);
-            consumerNames[i].getStyleClass().add(nameClasses[i]);
-
-            consumerSumas[i] = new Label("\u03A3 = 0");
-            consumerSumas[i].getStyleClass().add("consumer-suma");
-
-            consumerStatus[i] = new Label("\u23F8 Idle");
-            consumerStatus[i].getStyleClass().add("consumer-status");
-
-            // Card per consumer
-            VBox infoCol = new VBox(1, consumerNames[i], consumerSumas[i], consumerStatus[i]);
-            infoCol.setAlignment(Pos.CENTER_LEFT);
-            HBox row = new HBox(6, consumerEmojis[i], infoCol, consumerBinEmojis[i]);
-            row.setAlignment(Pos.CENTER_LEFT);
-            row.getStyleClass().add("consumer-card");
-            row.setPadding(new Insets(6, 10, 6, 10));
-
-            // Colored left border effect via background
-            Rectangle colorBar = new Rectangle(4, 50);
-            colorBar.setFill(colors[i]);
-            HBox cardWithBar = new HBox(0, colorBar, row);
-            cardWithBar.setAlignment(Pos.CENTER_LEFT);
-
-            consumersColumn.getChildren().add(cardWithBar);
+            VBox robotCard = new VBox(2, robotNameLabels[i], scoreRow, robotStatusLabels[i]);
+            robotCard.setPadding(new Insets(4));
+            robotCard.setStyle("-fx-background-color: #fff8e8; -fx-border-color: " + colorToHex(colors[i]) + "; -fx-border-width: 2;");
+            robotsInfo.getChildren().add(robotCard);
         }
 
-        VBox box = new VBox(6, consTitle, gearRight, consumersColumn);
-        box.setAlignment(Pos.CENTER);
-        box.getStyleClass().add("consumers-box");
-        box.setPrefWidth(260);
-        return box;
+        panel.getChildren().addAll(
+                minerTitle, minerStatusLabel, numTitle, minerNumberLabel,
+                new Separator(), bufTitle, bufferProgress, bufferCountLabel, legend,
+                new Separator(), robTitle, robotsInfo
+        );
+        return panel;
     }
 
-    private void updateProducerState(String estado) {
-        switch (estado) {
-            case "ACTIVO" -> {
-                producerEmoji.setText("\uD83D\uDC77");
-                producerStatus.setText("\u26A1 Produciendo...");
-                producerStatus.getStyleClass().removeAll("status-active", "status-blocked", "status-idle");
-                producerStatus.getStyleClass().add("status-active");
-                if (producerPulse != null) AnimationUtils.stopPulse(producerEmoji, producerPulse);
-                producerPulse = null;
-                AnimationUtils.glowEffect(producerEmoji, COLOR_ACTIVE);
+    // ═══════════════════════════════════════
+    //  GAME LOOP - Canvas Rendering
+    // ═══════════════════════════════════════
+    private void startGameLoop() {
+        gameLoop = new AnimationTimer() {
+            long last = 0;
+            @Override
+            public void handle(long now) {
+                if (now - last >= 100_000_000L) { // ~10 fps for pixel art feel
+                    last = now;
+                    animFrame++;
+                    renderScene();
+                }
             }
-            case "BLOQUEADO" -> {
-                producerEmoji.setText("\uD83D\uDE2D");
-                producerStatus.setText("\uD83D\uDED1 Buffer Lleno!");
-                producerStatus.getStyleClass().removeAll("status-active", "status-blocked", "status-idle");
-                producerStatus.getStyleClass().add("status-blocked");
-                producerPulse = AnimationUtils.pulseNode(producerEmoji);
+        };
+        gameLoop.start();
+    }
+
+    private void renderScene() {
+        int pw = canvas.pxW(); // 240
+        int ph = canvas.pxH(); // 128
+
+        canvas.clear(BG_CREAM);
+
+        // ── Background ──
+        // Brick wall (top)
+        canvas.drawBrickWall(0, 0, pw, 30);
+        // Wall-floor border
+        canvas.fill(0, 30, pw, 2, DARK_BROWN);
+        canvas.drawWarningStripes(0, 29, pw);
+        // Stone floor (bottom)
+        canvas.drawStoneFloor(0, 100, pw, 28);
+        // Factory floor
+        canvas.fill(0, 32, pw, 68, Color.web("#d8c8a0"));
+
+        // ── Wall decorations ──
+        canvas.drawTorch(8, 8, animFrame);
+        canvas.drawTorch(228, 8, animFrame);
+        canvas.drawGauge(50, 10, (animFrame % 30) / 30.0);
+        canvas.drawGauge(180, 10, 0.7);
+        canvas.drawPipeH(60, 22, 120);
+
+        // Sign on wall
+        canvas.fill(85, 4, 70, 12, WOOD2);
+        canvas.fill(86, 5, 68, 10, WOOD1);
+        canvas.fill(87, 6, 66, 8, DK_RED);
+        canvas.fill(87, 6, 66, 2, RED);
+        canvas.drawText("PIXEL FACTORY", 30, 3.5, WHITE, 7);
+
+        // ── Mine entrance (left) ──
+        canvas.drawMineEntrance(5, 34);
+
+        // ── Miner character ──
+        int mFrame = minerState;
+        if (minerState == 1) {
+            // Alternate between mining up (1) and down (2)
+            mFrame = (animFrame % 4 < 2) ? 1 : 2;
+        }
+        canvas.drawMiner(20, 58, mFrame);
+
+        // Sparks when mining
+        if (minerState == 1) {
+            canvas.drawSpark(32, 58, animFrame, GOLD);
+            canvas.drawSpark(34, 56, animFrame + 2, ORANGE);
+        }
+
+        // Mined number display above miner
+        if (lastMinedNumber >= 0 && minerState != 4) {
+            TipoNumero tipo = NumberClassifier.clasificar(lastMinedNumber);
+            Color numColor = switch (tipo) {
+                case PAR   -> COLOR_PAR;
+                case IMPAR -> COLOR_IMPAR;
+                case PRIMO -> COLOR_PRIMO;
+            };
+            canvas.drawOreBlock(18, 48, numColor);
+            canvas.drawText(String.valueOf(lastMinedNumber), 8.5, 16.5, WHITE, 6);
+        }
+
+        // ── Pipe from mine to conveyor ──
+        canvas.drawPipeH(35, 65, 25);
+        // Animated arrows on pipe
+        int arrowOff = animFrame % 8;
+        for (int i = 0; i < 3; i++) {
+            int ax = 40 + i * 6 + arrowOff;
+            if (ax < 58) {
+                canvas.dot(ax, 66, GOLD);
+                canvas.dot(ax + 1, 67, GOLD);
             }
-            case "TERMINADO" -> {
-                producerEmoji.setText("\uD83D\uDE34");
-                producerStatus.setText("\u23F9 Terminado");
-                producerStatus.getStyleClass().removeAll("status-active", "status-blocked", "status-idle");
-                producerStatus.getStyleClass().add("status-idle");
-                if (producerPulse != null) AnimationUtils.stopPulse(producerEmoji, producerPulse);
-                producerPulse = null;
-                AnimationUtils.clearEffect(producerEmoji);
+        }
+
+        // ── Conveyor belt ──
+        canvas.drawConveyor(60, 57, 110, animFrame);
+
+        // ── Buffer items on belt ──
+        drawBufferOnCanvas();
+
+        // ── Pipe from conveyor to robots ──
+        canvas.drawPipeH(170, 65, 20);
+        for (int i = 0; i < 3; i++) {
+            int ax = 175 + i * 5 + (animFrame % 6);
+            if (ax < 188) {
+                canvas.dot(ax, 66, GOLD);
+                canvas.dot(ax + 1, 67, GOLD);
             }
+        }
+
+        // ── Robot station ──
+        // Station background
+        canvas.fill(190, 33, 45, 67, Color.web("#e0d0b0"));
+        canvas.fill(190, 33, 45, 2, BROWN);
+        canvas.fill(190, 33, 1, 67, BROWN);
+        canvas.fill(234, 33, 1, 67, BROWN);
+
+        // Draw 3 robots
+        Color[][] robotColors = {
+            {TEAL, DK_TEAL, LT_TEAL},
+            {GREEN, DK_GREEN, LT_GREEN},
+            {ORANGE, DK_ORANGE, GOLD}
+        };
+        for (int i = 0; i < 3; i++) {
+            int rx = 200, ry = 37 + i * 22;
+            canvas.drawRobot(rx, ry, robotStates[i], robotColors[i][0], robotColors[i][1], robotColors[i][2]);
+
+            // Robot label
+            canvas.drawText(switch (i) {
+                case 0 -> "PAR";
+                case 1 -> "IMP";
+                default -> "PRI";
+            }, 71, 13.5 + i * 7.3, robotColors[i][0], 5);
+        }
+
+        // ── Floor decorations ──
+        canvas.drawCrate(3, 90);
+        canvas.drawCrate(10, 92);
+        canvas.drawBarrel(230, 88);
+        canvas.drawBarrel(222, 90);
+        canvas.drawCrate(215, 93);
+
+        // ── Smoke/steam from factory ──
+        canvas.drawSmoke(100, 28, animFrame);
+        canvas.drawSmoke(140, 26, animFrame + 4);
+    }
+
+    private void drawBufferOnCanvas() {
+        if (controller.getBuffer() == null) return;
+        List<Integer> snapshot = controller.getBuffer().getSnapshot();
+
+        for (int i = 0; i < BUFFER_SIZE && i < snapshot.size(); i++) {
+            int num = snapshot.get(i);
+            TipoNumero tipo = NumberClassifier.clasificar(num);
+            Color color = switch (tipo) {
+                case PAR   -> COLOR_PAR;
+                case IMPAR -> COLOR_IMPAR;
+                case PRIMO -> COLOR_PRIMO;
+            };
+            // Position on conveyor: 2 rows x 6 cols
+            int col = i % 6;
+            int row = i / 6;
+            int bx = 64 + col * 16;
+            int by = 50 + row * 9;
+            canvas.drawOreBlock(bx, by, color);
+            canvas.drawText(String.valueOf(num), (bx + 1.0) / 1, (by + 0.5) / 1, WHITE, 4);
         }
     }
 
-    private void updateConsumerState(int idx, String estado) {
-        String[] activeEmojis  = {"\uD83D\uDC68\u200D\uD83D\uDD27", "\uD83D\uDC69\u200D\uD83D\uDD27", "\uD83E\uDDD1\u200D\uD83D\uDCBB"};
-        switch (estado) {
-            case "ACTIVO" -> {
-                consumerEmojis[idx].setText(activeEmojis[idx]);
-                consumerStatus[idx].setText("\u26A1 Consumiendo...");
-                consumerStatus[idx].getStyleClass().removeAll("status-active", "status-blocked", "status-idle");
-                consumerStatus[idx].getStyleClass().add("status-active");
-                if (consumerPulses[idx] != null) AnimationUtils.stopPulse(consumerEmojis[idx], consumerPulses[idx]);
-                consumerPulses[idx] = null;
-                AnimationUtils.glowEffect(consumerEmojis[idx], COLOR_ACTIVE);
-            }
-            case "BLOQUEADO" -> {
-                consumerEmojis[idx].setText("\uD83D\uDE34");
-                consumerStatus[idx].setText("\uD83D\uDED1 Esperando...");
-                consumerStatus[idx].getStyleClass().removeAll("status-active", "status-blocked", "status-idle");
-                consumerStatus[idx].getStyleClass().add("status-blocked");
-                consumerPulses[idx] = AnimationUtils.pulseNode(consumerEmojis[idx]);
-            }
-            case "TERMINADO" -> {
-                consumerEmojis[idx].setText("\u2705");
-                consumerStatus[idx].setText("\u23F9 Terminado");
-                consumerStatus[idx].getStyleClass().removeAll("status-active", "status-blocked", "status-idle");
-                consumerStatus[idx].getStyleClass().add("status-idle");
-                if (consumerPulses[idx] != null) AnimationUtils.stopPulse(consumerEmojis[idx], consumerPulses[idx]);
-                consumerPulses[idx] = null;
-                AnimationUtils.clearEffect(consumerEmojis[idx]);
-            }
-        }
-    }
-
-    private void startUpdateLoop() {
-        updateTimeline = new Timeline(new KeyFrame(Duration.millis(100), e -> updateBufferView()));
+    // ═══════════════════════════════════════
+    //  BUFFER UPDATE LOOP (separate from render)
+    // ═══════════════════════════════════════
+    private void startBufferUpdateLoop() {
+        updateTimeline = new Timeline(new KeyFrame(Duration.millis(100), e -> updateBufferInfo()));
         updateTimeline.setCycleCount(Animation.INDEFINITE);
         updateTimeline.play();
     }
 
-    private void updateBufferView() {
+    private void updateBufferInfo() {
         if (controller.getBuffer() == null) return;
         List<Integer> snapshot = controller.getBuffer().getSnapshot();
         int count = snapshot.size();
-
         bufferProgress.setProgress((double) count / BUFFER_SIZE);
-        bufferCountLabel.setText("\uD83D\uDCE6 " + count + "/" + BUFFER_SIZE);
+        bufferCountLabel.setText(count + "/" + BUFFER_SIZE);
+    }
 
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            if (i < snapshot.size()) {
-                int num = snapshot.get(i);
-                TipoNumero tipo = NumberClassifier.clasificar(num);
-                bufferLabels[i].setText(String.valueOf(num));
-                switch (tipo) {
-                    case PAR -> {
-                        bufferSlots[i].setFill(COLOR_PAR);
-                        bufferEmojis[i].setText("\uD83D\uDFEA");
-                    }
-                    case IMPAR -> {
-                        bufferSlots[i].setFill(COLOR_IMPAR);
-                        bufferEmojis[i].setText("\uD83D\uDFE2");
-                    }
-                    case PRIMO -> {
-                        bufferSlots[i].setFill(COLOR_PRIMO);
-                        bufferEmojis[i].setText("\uD83D\uDFE0");
-                    }
-                }
-                // Glow effect on filled slots
-                DropShadow slotGlow = new DropShadow();
-                slotGlow.setColor((Color) bufferSlots[i].getFill());
-                slotGlow.setRadius(8);
-                slotGlow.setSpread(0.3);
-                bufferSlotPanes[i].setEffect(slotGlow);
-            } else {
-                bufferSlots[i].setFill(COLOR_SLOT_EMPTY);
-                bufferLabels[i].setText("");
-                bufferEmojis[i].setText("");
-                bufferSlotPanes[i].setEffect(null);
-            }
-        }
+    // ═══════════════════════════════════════
+    //  UTILITY
+    // ═══════════════════════════════════════
+    private static String colorToHex(Color c) {
+        return String.format("#%02x%02x%02x",
+                (int)(c.getRed()*255), (int)(c.getGreen()*255), (int)(c.getBlue()*255));
     }
 
     public void cleanup() {
         controller.detener();
         if (updateTimeline != null) updateTimeline.stop();
+        if (gameLoop != null) gameLoop.stop();
     }
 }

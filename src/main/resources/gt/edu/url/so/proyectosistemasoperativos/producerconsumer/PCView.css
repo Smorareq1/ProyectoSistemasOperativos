@@ -1,173 +1,261 @@
 /* ============================================================
-   PCView.css — Factory-Themed Producer-Consumer Styles
+   PCView.css — PIXEL ART FACTORY (Warm Retro Style)
+   Isometric pixel art factory with warm color palette
    ============================================================ */
 
-/* ---- Root ---- */
+/* ---- Root: Warm Parchment Background ---- */
 .pc-root {
-    -fx-background-color: linear-gradient(to bottom, #0f0e17, #12111a);
+    -fx-background-color: linear-gradient(to bottom, #f5e6c8, #e8d5b0, #f5e6c8);
 }
 
 /* ---- Top Bar ---- */
 .pc-top-bar {
-    -fx-background-color: #0a0a12;
-    -fx-border-color: #2cb67d;
-    -fx-border-width: 0 0 3 0;
-    -fx-padding: 10 20 10 20;
-    -fx-effect: dropshadow(three-pass-box, rgba(44,182,125,0.2), 6, 0, 0, 3);
+    -fx-background-color: #e8682a;
+    -fx-border-color: #4a3728;
+    -fx-border-width: 0 0 4 0;
+    -fx-padding: 8 16 8 16;
+    -fx-effect: dropshadow(three-pass-box, rgba(74,55,40,0.5), 6, 0, 0, 3);
+}
+
+.title-decor {
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
+    -fx-font-size: 12;
+    -fx-text-fill: #f0c040;
+    -fx-opacity: 0.6;
 }
 
 .pc-controls {
-    -fx-padding: 8 20 8 20;
-    -fx-background-color: #12111a;
-    -fx-border-color: #242838;
-    -fx-border-width: 0 0 2 0;
+    -fx-padding: 6 16 6 16;
+    -fx-background-color: #e0c8a0;
+    -fx-border-color: #6b4c38;
+    -fx-border-width: 0 0 3 0;
 }
 
-/* ---- Producer Box (Factory Machine) ---- */
-.producer-box {
-    -fx-background-color: #1a1a2e;
-    -fx-border-color: #2cb67d;
-    -fx-border-width: 3;
+/* ---- Miner Box (Producer) ---- */
+.miner-box {
+    -fx-background-color: linear-gradient(to bottom, #f0dcc0, #e0c8a0);
+    -fx-border-color: #d4572a;
+    -fx-border-width: 4;
     -fx-border-radius: 0;
     -fx-background-radius: 0;
-    -fx-padding: 12;
-    -fx-effect: dropshadow(three-pass-box, rgba(44,182,125,0.4), 12, 0, 0, 0);
+    -fx-padding: 8;
+    -fx-effect: dropshadow(three-pass-box, rgba(74,55,40,0.5), 8, 0, 3, 3);
+}
+
+.mine-header {
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
+    -fx-font-size: 8;
+    -fx-font-weight: bold;
+    -fx-text-fill: #d4572a;
+    -fx-effect: dropshadow(three-pass-box, rgba(212,87,42,0.3), 3, 0, 1, 1);
 }
 
 .machine-frame {
-    -fx-font-size: 14;
-    -fx-text-fill: #393b52;
-    -fx-font-family: "Consolas", monospace;
+    -fx-font-size: 8;
+    -fx-text-fill: #c4a882;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
 
-.smoke-label {
-    -fx-font-size: 24;
-}
-
-.producer-label {
-    -fx-font-size: 12;
+.miner-label {
+    -fx-font-size: 8;
     -fx-font-weight: bold;
-    -fx-text-fill: #2cb67d;
-    -fx-effect: dropshadow(three-pass-box, #2cb67d, 6, 0.3, 0, 0);
+    -fx-text-fill: #4a3728;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
+    -fx-effect: dropshadow(three-pass-box, rgba(74,55,40,0.2), 2, 0, 1, 1);
 }
 
-.producer-status {
-    -fx-font-size: 11;
-    -fx-text-fill: #a7a9be;
+.miner-status {
+    -fx-font-size: 7;
+    -fx-text-fill: #8b7355;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
 
-.producer-number {
-    -fx-font-size: 28;
+.mined-title {
+    -fx-font-size: 7;
     -fx-font-weight: bold;
-    -fx-text-fill: #fffffe;
-    -fx-effect: dropshadow(three-pass-box, rgba(255,255,254,0.5), 6, 0, 0, 0);
+    -fx-text-fill: #d4572a;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
 
-/* ---- Buffer Box (Conveyor Belt) ---- */
-.buffer-box {
-    -fx-background-color: #1a1a2e;
-    -fx-border-color: #ff8906;
+.miner-number {
+    -fx-font-size: 22;
+    -fx-font-weight: bold;
+    -fx-text-fill: #4a3728;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
+    -fx-effect: dropshadow(three-pass-box, rgba(212,87,42,0.5), 6, 0, 2, 2);
+}
+
+.number-frame {
+    -fx-background-color: #fff8e8;
+    -fx-border-color: #e8682a;
     -fx-border-width: 3;
+    -fx-padding: 4 10;
+}
+
+/* ---- Conveyor Belt / Buffer ---- */
+.buffer-box {
+    -fx-background-color: linear-gradient(to bottom, #f0dcc0, #e0c8a0);
+    -fx-border-color: #f0c040;
+    -fx-border-width: 4;
     -fx-border-radius: 0;
     -fx-background-radius: 0;
-    -fx-padding: 14;
-    -fx-effect: dropshadow(three-pass-box, rgba(255,137,6,0.3), 12, 0, 0, 0);
+    -fx-padding: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(74,55,40,0.4), 8, 0, 3, 3);
 }
 
 .buffer-title {
-    -fx-font-size: 14;
+    -fx-font-size: 9;
     -fx-font-weight: bold;
-    -fx-text-fill: #ff8906;
-    -fx-effect: dropshadow(three-pass-box, #ff8906, 6, 0.3, 0, 0);
+    -fx-text-fill: #4a3728;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
+    -fx-effect: dropshadow(three-pass-box, rgba(240,192,64,0.4), 4, 0, 1, 1);
 }
 
 .buffer-count {
-    -fx-font-size: 14;
+    -fx-font-size: 9;
     -fx-font-weight: bold;
-    -fx-text-fill: #ff8906;
+    -fx-text-fill: #d4572a;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
+}
+
+.cap-label {
+    -fx-font-size: 7;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8b7355;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
 
 .buffer-slot-label {
-    -fx-font-size: 9;
+    -fx-font-size: 8;
     -fx-font-weight: bold;
-    -fx-text-fill: #fffffe;
+    -fx-text-fill: #fff8e8;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
 
-.buffer-slot-emoji {
-    -fx-font-size: 10;
+.ring-arrow {
+    -fx-font-size: 7;
+    -fx-text-fill: #e8682a;
+    -fx-opacity: 0.4;
+    -fx-font-family: "Consolas", monospace;
 }
 
-/* ---- Conveyor Arrows ---- */
-.conveyor-arrow {
-    -fx-font-size: 16;
-}
-
-/* ---- Progress Bar (pixel style) ---- */
+/* ---- Progress Bar: HP Bar Style ---- */
 .progress-bar .track {
-    -fx-background-color: #0a0a12;
+    -fx-background-color: #e0c8a0;
     -fx-background-radius: 0;
-    -fx-border-color: #393b52;
-    -fx-border-width: 2;
+    -fx-border-color: #6b4c38;
+    -fx-border-width: 3;
     -fx-border-radius: 0;
     -fx-pref-height: 14;
 }
 
 .progress-bar .bar {
-    -fx-background-color: linear-gradient(to right, #ff8906, #e53170);
+    -fx-background-color: linear-gradient(to right, #c83830, #e8682a, #f0c040);
     -fx-background-radius: 0;
     -fx-background-insets: 2;
-    -fx-effect: dropshadow(three-pass-box, rgba(255,137,6,0.5), 6, 0, 0, 0);
+    -fx-effect: dropshadow(three-pass-box, rgba(232,104,42,0.4), 4, 0, 0, 0);
 }
 
-/* ---- Consumers Box ---- */
-.consumers-box {
-    -fx-background-color: #1a1a2e;
-    -fx-border-color: #e53170;
-    -fx-border-width: 3;
+/* ---- Pipe Connector ---- */
+.pipe-cap {
+    -fx-font-size: 10;
+    -fx-text-fill: #c4a882;
+    -fx-font-family: "Consolas", monospace;
+}
+
+/* ---- Robots Box (Consumers) ---- */
+.robots-box {
+    -fx-background-color: linear-gradient(to bottom, #f0dcc0, #e0c8a0);
+    -fx-border-color: #3898b8;
+    -fx-border-width: 4;
     -fx-border-radius: 0;
     -fx-background-radius: 0;
-    -fx-padding: 12;
-    -fx-effect: dropshadow(three-pass-box, rgba(229,49,112,0.3), 12, 0, 0, 0);
+    -fx-padding: 8;
+    -fx-effect: dropshadow(three-pass-box, rgba(56,152,184,0.3), 8, 0, 3, 3);
 }
 
-/* ---- Consumer Cards ---- */
-.consumer-card {
-    -fx-background-color: #12111a;
+.robots-title {
+    -fx-font-size: 9;
+    -fx-font-weight: bold;
+    -fx-text-fill: #3898b8;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
+    -fx-effect: dropshadow(three-pass-box, rgba(56,152,184,0.3), 4, 0, 1, 1);
+}
+
+/* ---- Robot Cards ---- */
+.robot-card {
+    -fx-background-color: #fff8e8;
     -fx-background-radius: 0;
+    -fx-border-width: 2;
+    -fx-border-radius: 0;
 }
 
-.consumer-name-par {
+.robot-card-blue  { -fx-border-color: #3898b8; }
+.robot-card-green { -fx-border-color: #68b030; }
+.robot-card-gold  { -fx-border-color: #e8682a; }
+
+.robot-name-blue {
     -fx-font-weight: bold;
-    -fx-font-size: 12;
-    -fx-text-fill: #7f5af0;
+    -fx-font-size: 7;
+    -fx-text-fill: #2880a0;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
 
-.consumer-name-impar {
+.robot-name-green {
     -fx-font-weight: bold;
-    -fx-font-size: 12;
-    -fx-text-fill: #2cb67d;
+    -fx-font-size: 7;
+    -fx-text-fill: #4a8820;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
 
-.consumer-name-primo {
+.robot-name-gold {
     -fx-font-weight: bold;
-    -fx-font-size: 12;
-    -fx-text-fill: #ff8906;
+    -fx-font-size: 7;
+    -fx-text-fill: #d4572a;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
 
-.consumer-suma {
-    -fx-font-size: 16;
-    -fx-font-weight: bold;
-    -fx-text-fill: #fffffe;
-    -fx-effect: dropshadow(three-pass-box, rgba(255,255,254,0.3), 4, 0, 0, 0);
+.score-bar {
+    -fx-font-size: 4;
+    -fx-font-family: "Consolas", monospace;
 }
 
-.consumer-status {
+.robot-score {
     -fx-font-size: 10;
-    -fx-text-fill: #555770;
+    -fx-font-weight: bold;
+    -fx-text-fill: #4a3728;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
+    -fx-effect: dropshadow(three-pass-box, rgba(74,55,40,0.2), 2, 0, 1, 1);
+}
+
+.robot-status {
+    -fx-font-size: 6;
+    -fx-text-fill: #8b7355;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
+}
+
+/* ---- Torch & Decorations ---- */
+.torch-column {
+    -fx-padding: 4;
+}
+
+.dungeon-wall {
+    -fx-font-size: 14;
+    -fx-text-fill: #c4a882;
+    -fx-font-family: "Consolas", monospace;
+}
+
+/* ---- Legend ---- */
+.legend-text {
+    -fx-font-size: 7;
+    -fx-font-weight: bold;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
 
 /* ---- Speed Label ---- */
 .speed-label {
-    -fx-text-fill: #a7a9be;
-    -fx-font-size: 12;
+    -fx-text-fill: #6b4c38;
+    -fx-font-size: 8;
+    -fx-font-weight: bold;
+    -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
