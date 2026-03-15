@@ -1,6 +1,6 @@
 package gt.edu.url.so.proyectosistemasoperativos.producerconsumer;
 
-import gt.edu.url.so.proyectosistemasoperativos.common.LogPanel;
+import gt.edu.url.so.proyectosistemasoperativos.common.GameLogger;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -9,14 +9,14 @@ import java.util.function.Consumer;
 
 public class Producer extends Thread {
     private final SharedBuffer buffer;
-    private final LogPanel log;
+    private final GameLogger log;
     private final Consumer<String> estadoCallback;
     private final Consumer<Integer> numeroCallback;
     private volatile boolean running = true;
     private volatile boolean paused = false;
     private int delayMs = 500;
 
-    public Producer(SharedBuffer buffer, LogPanel log,
+    public Producer(SharedBuffer buffer, GameLogger log,
                     Consumer<String> estadoCallback, Consumer<Integer> numeroCallback) {
         super("Productor");
         setDaemon(true);
