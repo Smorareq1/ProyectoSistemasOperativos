@@ -129,7 +129,7 @@ public class DPAnimationView extends BorderPane {
         statePanel.setPadding(new Insets(8));
         statePanel.setPrefWidth(270);
         statePanel.setMinWidth(240);
-        statePanel.setStyle("-fx-background-color: #f0dcc0; -fx-border-color: #8b2018; -fx-border-width: 4;");
+        statePanel.setStyle("-fx-background-color: linear-gradient(to bottom, #3a2818, #2a1e14); -fx-border-color: #6b4c38 #1a1008 #1a1008 #6b4c38; -fx-border-width: 3; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 6, 0, -2, 0);");
 
         rebuildStatePanel();
 
@@ -175,7 +175,7 @@ public class DPAnimationView extends BorderPane {
 
         for (int i = 0; i < N; i++) {
             stateInfoLabels[i] = new Label("F" + i + ": \uD83D\uDCA4 PENSANDO");
-            stateInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #6858a0;");
+            stateInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #9080c0;");
             statePanel.getChildren().add(stateInfoLabels[i]);
         }
 
@@ -185,7 +185,7 @@ public class DPAnimationView extends BorderPane {
 
         for (int i = 0; i < N; i++) {
             forkInfoLabels[i] = new Label("T" + i + ": \u2705 libre");
-            forkInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #8b7355;");
+            forkInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #c4a882;");
             statePanel.getChildren().add(forkInfoLabels[i]);
         }
     }
@@ -249,14 +249,14 @@ public class DPAnimationView extends BorderPane {
         int tableR = 22;
         canvas.drawRoundTable(cx, cy, tableR);
 
-        // ── Philosophers around table ──
+        // ── Philosophers around table (14x18 HD-2D sprites) ──
         int N = config.getNumFilosofos();
-        double philR = tableR + 22; // distance from center to philosopher
+        double philR = tableR + 26; // increased distance for larger sprites
 
         for (int i = 0; i < N; i++) {
             double angle = 2 * Math.PI * i / N - Math.PI / 2;
-            int px = cx + (int)(philR * Math.cos(angle)) - 5;
-            int py = cy + (int)(philR * Math.sin(angle)) - 6;
+            int px = cx + (int)(philR * Math.cos(angle)) - 7;  // center 14w sprite
+            int py = cy + (int)(philR * Math.sin(angle)) - 9;  // center 18h sprite
 
             // Determine state from controller
             int philFrame = 0; // thinking
@@ -280,18 +280,18 @@ public class DPAnimationView extends BorderPane {
                     HAIR_COLORS[i % HAIR_COLORS.length],
                     bobY);
 
-            // Label
-            canvas.drawText("F" + i, (px + 3.0), (py + 14.0), DARK_BROWN, 4);
+            // Label — positioned below the 18h sprite
+            canvas.drawText("F" + i, (px + 4.0), (py + 19.0), DARK_BROWN, 4);
 
-            // Plate in front of philosopher (between phil and table)
-            double plateR = tableR + 8;
+            // Plate in front of philosopher (between phil and table edge)
+            double plateR = tableR + 12;
             int platX = cx + (int)(plateR * Math.cos(angle)) - 3;
             int platY = cy + (int)(plateR * Math.sin(angle)) - 1;
             canvas.drawPlate(platX, platY, philFrame == 1);
 
             // Fork between this philosopher and the next
             double forkAngle = 2 * Math.PI * (i + 0.5) / N - Math.PI / 2;
-            double forkR = tableR + 4;
+            double forkR = tableR + 6;
             int fkx = cx + (int)(forkR * Math.cos(forkAngle));
             int fky = cy + (int)(forkR * Math.sin(forkAngle));
 
@@ -331,24 +331,24 @@ public class DPAnimationView extends BorderPane {
                 switch (estado) {
                     case PENSANDO -> {
                         stateInfoLabels[i].setText("F" + i + ": \uD83D\uDCA4 PENSANDO");
-                        stateInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #6858a0;");
+                        stateInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #9080c0;");
                     }
                     case ESPERANDO -> {
                         stateInfoLabels[i].setText("F" + i + ": \u23F3 ESPERANDO");
-                        stateInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #e8682a;");
+                        stateInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #f0c040;");
                     }
                     case COMIENDO -> {
                         stateInfoLabels[i].setText("F" + i + ": \uD83C\uDF5D COMIENDO");
-                        stateInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #4a8820;");
+                        stateInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #90d858;");
                     }
                 }
 
                 if (forkHolder >= 0) {
                     forkInfoLabels[i].setText("T" + i + ": \u26D4 F" + forkHolder);
-                    forkInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #c83830; -fx-font-weight: bold;");
+                    forkInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #e84040; -fx-font-weight: bold;");
                 } else {
                     forkInfoLabels[i].setText("T" + i + ": \u2705 libre");
-                    forkInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #8b7355;");
+                    forkInfoLabels[i].setStyle("-fx-font-size: 7; -fx-font-family: 'Press Start 2P'; -fx-text-fill: #c4a882;");
                 }
             }
         });

@@ -171,7 +171,7 @@ public class PCAnimationView extends BorderPane {
         panel.setPadding(new Insets(8));
         panel.setPrefWidth(220);
         panel.setMinWidth(200);
-        panel.setStyle("-fx-background-color: #f0dcc0; -fx-border-color: #6b4c38; -fx-border-width: 4;");
+        panel.setStyle("-fx-background-color: linear-gradient(to bottom, #3a2818, #2a1e14); -fx-border-color: #6b4c38 #1a1008 #1a1008 #6b4c38; -fx-border-width: 3; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 6, 0, -2, 0);");
 
         // Miner section
         Label minerTitle = new Label("\u26CF MINER");
@@ -180,7 +180,7 @@ public class PCAnimationView extends BorderPane {
 
         Label numTitle = new Label("MINED BLOCK:");
         numTitle.getStyleClass().add("small-label");
-        minerNumberLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #d4572a; -fx-font-family: 'Press Start 2P';");
+        minerNumberLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #f0c040; -fx-font-family: 'Press Start 2P';");
 
         // Buffer section
         Label bufTitle = new Label("\u2699 BUFFER");
@@ -211,7 +211,7 @@ public class PCAnimationView extends BorderPane {
             robotNameLabels[i].setTextFill(colors[i]);
             robotNameLabels[i].getStyleClass().add("legend-text");
             robotScoreLabels[i] = new Label("0");
-            robotScoreLabels[i].setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4a3728; -fx-font-family: 'Press Start 2P';");
+            robotScoreLabels[i].setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #f0dcc0; -fx-font-family: 'Press Start 2P';");
             robotStatusLabels[i] = new Label("IDLE");
             robotStatusLabels[i].getStyleClass().add("small-label");
 
