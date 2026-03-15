@@ -112,30 +112,61 @@ public class PixelGameCanvas extends Canvas {
     //  BACKGROUND TILES
     // ═══════════════════════════════════════
 
-    /** Brick wall pattern */
+    /** Brick wall pattern — HD-2D with mortar depth, wear, and ambient gradient */
     public void drawBrickWall(int sx, int sy, int w, int h) {
-        fill(sx, sy, w, h, MORTAR);
+        // Mortar base with vertical ambient gradient (lighter at top = torch light)
+        for (int y = sy; y < sy + h; y++) {
+            double t = (double)(y - sy) / Math.max(h, 1);
+            int r = (int)(0xd0 - t * 0x28), g = (int)(0xb8 - t * 0x30), b = (int)(0x98 - t * 0x28);
+            fill(sx, y, w, 1, Color.rgb(clamp(r), clamp(g), clamp(b)));
+        }
+        // Dark grout shadow lines
         int bW = 7, bH = 3;
         int row = 0;
         for (int y = sy; y < sy + h; y += bH + 1) {
+            fill(sx, y + bH, w, 1, Color.web("#6a5038"));
             int off = (row % 2 == 0) ? 0 : 4;
             for (int x = sx - bW + off; x < sx + w; x += bW + 1) {
                 int dx = Math.max(x, sx);
                 int dw = Math.min(x + bW, sx + w) - dx;
                 int dh = Math.min(bH, sy + h - y);
                 if (dw > 0 && dh > 0) {
-                    Color bc = ((row + x / (bW + 1)) % 3 == 0) ? BRICK2 : BRICK1;
+                    // Varied brick colors via pseudo-random hash
+                    int hash = ((row * 7 + x * 13) & 0xFF);
+                    Color bc;
+                    if (hash < 70) bc = BRICK2;
+                    else if (hash < 190) bc = BRICK1;
+                    else bc = BRICK_LT;
                     fill(dx, y, dw, dh, bc);
-                    if (dh >= 2) fill(dx, y, dw, 1, BRICK_LT);
+                    // Top edge highlight
+                    fill(dx, y, dw, 1, bc.deriveColor(0, 0.9, 1.25, 1.0));
+                    // Bottom edge shadow
+                    fill(dx, y + dh - 1, dw, 1, bc.darker());
+                    // Left edge micro-highlight
+                    dot(dx, y, bc.deriveColor(0, 0.8, 1.35, 1.0));
+                    // Right edge shadow
+                    if (dw > 1) dot(dx + dw - 1, y + dh - 1, bc.darker().darker());
+                    // Occasional wear/damage
+                    if (hash > 225 && dw > 3) {
+                        dot(dx + 2, y + 1, bc.darker().desaturate());
+                        dot(dx + 1, y + 1, bc.darker());
+                    }
+                    // Occasional mortar stain
+                    if (hash > 200 && hash <= 225 && dw > 4) {
+                        dot(dx + 3, y + 1, MORTAR.darker());
+                    }
                 }
             }
             row++;
         }
     }
 
-    /** Stone floor tiles */
+    private static int clamp(int v) { return Math.max(0, Math.min(255, v)); }
+
+    /** Stone floor tiles — HD-2D with specular highlights, grout shadows, and wear */
     public void drawStoneFloor(int sx, int sy, int w, int h) {
-        Color[] sc = {TAN, MED_BROWN, Color.web("#b09870"), Color.web("#a08060")};
+        Color[] sc = {TAN, MED_BROWN, Color.web("#b09870"), Color.web("#a08060"),
+                       Color.web("#c0a880"), Color.web("#908068")};
         int tW = 6, tH = 5;
         for (int y = sy; y < sy + h; y += tH) {
             int off = ((y - sy) / tH % 2) * 3;
@@ -143,45 +174,110 @@ public class PixelGameCanvas extends Canvas {
                 int idx = Math.abs((x * 3 + y * 7)) % sc.length;
                 int dw = Math.min(tW - 1, sx + w - x);
                 int dh = Math.min(tH - 1, sy + h - y);
-                if (dw > 0 && dh > 0) fill(x, y, dw, dh, sc[idx]);
+                if (dw > 0 && dh > 0) {
+                    Color base = sc[idx];
+                    fill(x, y, dw, dh, base);
+                    // Top-left specular highlight
+                    dot(x, y, base.deriveColor(0, 0.8, 1.3, 1.0));
+                    if (dw > 1) dot(x + 1, y, base.deriveColor(0, 0.9, 1.15, 1.0));
+                    // Bottom-right shadow
+                    if (dh > 1) fill(x, y + dh - 1, dw, 1, base.darker());
+                    if (dw > 1) dot(x + dw - 1, y + dh - 1, base.darker().darker());
+                    // Occasional surface crack
+                    int hash = Math.abs(x * 11 + y * 17) & 0xFF;
+                    if (hash > 230 && dw > 2 && dh > 2) {
+                        dot(x + 1, y + 1, base.darker());
+                        dot(x + 2, y + 2, base.darker());
+                    }
+                }
             }
         }
-        for (int y = sy; y < sy + h; y += tH) fill(sx, y, w, 1, BROWN);
-    }
-
-    /** Wood plank floor */
-    public void drawWoodFloor(int sx, int sy, int w, int h) {
-        int pH = 5;
-        for (int y = sy; y < sy + h; y += pH) {
-            Color pc = ((y - sy) / pH % 2 == 0) ? WOOD1 : WOOD2;
-            int dh = Math.min(pH, sy + h - y);
-            fill(sx, y, w, dh, pc);
-            fill(sx, y, w, 1, WOOD_LT);
-            for (int x = sx + 10 + ((y / pH) % 3) * 5; x < sx + w; x += 20)
-                dot(x, y + 2, DARK_BROWN);
+        // Dark grout lines between rows
+        for (int y = sy; y < sy + h; y += tH) {
+            fill(sx, y, w, 1, Color.web("#5a4030"));
+        }
+        // Vertical grout accents
+        for (int y = sy; y < sy + h; y += tH) {
+            int off = ((y - sy) / tH % 2) * 3;
+            for (int x = sx + off; x < sx + w; x += tW) {
+                if (x > sx) dot(x - 1, y + 1, Color.web("#6a5040"));
+            }
         }
     }
 
-    /** Animated conveyor belt */
+    /** Wood plank floor — HD-2D with grain, knots, and plank shadow gaps */
+    public void drawWoodFloor(int sx, int sy, int w, int h) {
+        int pH = 5;
+        Color[] planks = {WOOD1, WOOD2, Color.web("#a07848"), Color.web("#c09060")};
+        for (int y = sy; y < sy + h; y += pH) {
+            int plankIdx = ((y - sy) / pH) % planks.length;
+            Color pc = planks[plankIdx];
+            int dh = Math.min(pH, sy + h - y);
+            fill(sx, y, w, dh, pc);
+            // Top edge highlight (light catching the plank edge)
+            fill(sx, y, w, 1, pc.deriveColor(0, 0.85, 1.2, 1.0));
+            // Bottom gap shadow between planks
+            fill(sx, y + dh - 1, w, 1, pc.darker().darker());
+            // Wood grain streaks (lighter lines along the plank)
+            for (int gx = sx + (plankIdx * 3); gx < sx + w; gx += 8) {
+                int gw = Math.min(3, sx + w - gx);
+                fill(gx, y + 2, gw, 1, pc.deriveColor(0, 0.7, 1.15, 1.0));
+            }
+            // Knot marks
+            int knotOff = 10 + ((y / pH) % 3) * 7;
+            for (int x = sx + knotOff; x < sx + w; x += 22) {
+                dot(x, y + 2, DARK_BROWN);
+                dot(x + 1, y + 2, pc.darker());
+                dot(x, y + 3, pc.darker());
+            }
+            // Nail heads on plank ends
+            for (int x = sx + 2; x < sx + w; x += 30) {
+                dot(x, y + 1, DK_GRAY);
+            }
+        }
+    }
+
+    /** Animated conveyor belt — HD-2D with metallic rollers, rivets, and shine */
     public void drawConveyor(int sx, int sy, int w, int frame) {
-        // Rails
-        fill(sx, sy, w, 1, BROWN);
-        fill(sx, sy + 7, w, 1, BROWN);
-        fill(sx - 1, sy, 1, 8, DARK_BROWN);
-        fill(sx + w, sy, 1, 8, DARK_BROWN);
-        // Belt surface
-        fill(sx, sy + 1, w, 6, DK_GRAY);
+        // Side frame plates (metallic)
+        fill(sx - 2, sy - 1, 2, 10, DK_GRAY);
+        fill(sx + w, sy - 1, 2, 10, DK_GRAY);
+        dot(sx - 2, sy - 1, LT_GRAY);
+        dot(sx + w, sy - 1, LT_GRAY);
+        // Top rail with metallic sheen
+        fill(sx, sy, w, 1, Color.web("#606060"));
+        fill(sx, sy, w, 1, DK_GRAY);
+        // Bottom rail
+        fill(sx, sy + 7, w, 1, Color.web("#505050"));
+        // Belt surface with depth
+        fill(sx, sy + 1, w, 6, Color.web("#454545"));
         fill(sx, sy + 2, w, 4, GRAY);
-        // Animated stripes
+        fill(sx, sy + 2, w, 1, LT_GRAY); // top shine on belt surface
+        // Animated stripes (belt motion)
         int off = frame % 4;
         for (int x = sx + off; x < sx + w; x += 4) {
             int dw = Math.min(2, sx + w - x);
             fill(x, sy + 2, dw, 4, LT_GRAY);
+            fill(x, sy + 2, dw, 1, VLT_GRAY); // stripe highlight
         }
-        // Support legs
+        // Rivets along top and bottom rails
+        for (int x = sx + 3; x < sx + w - 1; x += 8) {
+            dot(x, sy, LT_GRAY);
+            dot(x, sy + 7, LT_GRAY);
+        }
+        // Roller drums at ends
+        fill(sx, sy + 1, 2, 6, Color.web("#707070"));
+        fill(sx, sy + 2, 2, 1, VLT_GRAY); // roller shine
+        fill(sx + w - 2, sy + 1, 2, 6, Color.web("#707070"));
+        fill(sx + w - 2, sy + 2, 2, 1, VLT_GRAY);
+        // Support legs with reinforced base
         for (int x = sx + 6; x < sx + w - 2; x += 18) {
-            fill(x, sy + 8, 2, 4, BROWN);
-            fill(x, sy + 11, 4, 1, DARK_BROWN);
+            fill(x, sy + 8, 2, 4, DK_GRAY);
+            fill(x, sy + 8, 2, 1, LT_GRAY); // top shine
+            fill(x - 1, sy + 11, 4, 1, Color.web("#404040"));
+            fill(x - 1, sy + 12, 4, 1, Color.web("#353535"));
+            // Bolts on legs
+            dot(x, sy + 9, LT_GRAY);
         }
     }
 
@@ -459,7 +555,8 @@ public class PixelGameCanvas extends Canvas {
     }
 
     /**
-     * Draw a philosopher character seated (14w x 18h pixels) — HD-2D detailed.
+     * Draw a philosopher character seated (14w x 18h pixels).
+     * HD-2D style with detailed robe folds, expressive face, ornate chair.
      * frame: 0=thinking, 1=eating, 2=waiting
      * bobOffset: vertical bob for idle animation
      */
@@ -470,104 +567,136 @@ public class PixelGameCanvas extends Canvas {
         Color SASH = GOLD;
 
         // ── Hair ──
-        fill(x + 4, by, 6, 1, hairHi);
+        fill(x + 4, by, 6, 1, hair);
         fill(x + 3, by + 1, 8, 2, hair);
-        fill(x + 3, by + 1, 2, 1, hairHi);
-        dot(x + 10, by + 2, hair.darker());
+        // Hair highlight
+        dot(x + 5, by, hair.brighter());
+        dot(x + 6, by + 1, hair.brighter());
+        // Side hair / sideburns
+        dot(x + 3, by + 3, hair);
+        dot(x + 10, by + 3, hair);
 
         // ── Face ──
         fill(x + 4, by + 3, 6, 5, SKIN);
-        fill(x + 4, by + 3, 6, 1, SKIN_LT);
-        fill(x + 4, by + 7, 6, 1, SKIN_DK);
+        fill(x + 4, by + 3, 6, 1, SKIN_LT);  // forehead highlight
         // Eyebrows
-        fill(x + 5, by + 3, 2, 1, hair.darker());
-        fill(x + 8, by + 3, 2, 1, hair.darker());
+        fill(x + 4, by + 4, 2, 1, hair.darker());
+        fill(x + 8, by + 4, 2, 1, hair.darker());
         // Eyes
-        dot(x + 5, by + 4, BLACK);
-        dot(x + 8, by + 4, BLACK);
-        dot(x + 6, by + 4, WHITE);
-        dot(x + 9, by + 4, WHITE);
+        dot(x + 5, by + 5, BLACK);
+        dot(x + 8, by + 5, BLACK);
+        // Eye whites
+        dot(x + 4, by + 5, WHITE);
+        dot(x + 9, by + 5, WHITE);
         // Nose
-        dot(x + 7, by + 5, SKIN_DK);
-        // Ears
-        dot(x + 3, by + 4, SKIN_DK);
-        dot(x + 10, by + 4, SKIN_DK);
-
+        dot(x + 7, by + 6, SKIN_DK);
+        // Mouth
         if (frame == 1) {
+            // Eating - open mouth
             fill(x + 6, by + 7, 2, 1, DK_ORANGE);
+        } else if (frame == 2) {
+            // Waiting - frown
+            fill(x + 6, by + 7, 2, 1, SKIN_DK);
+            dot(x + 5, by + 7, SKIN_DK);
         } else {
+            // Thinking - neutral
             fill(x + 6, by + 7, 2, 1, SKIN_DK);
         }
+        // Cheek blush
+        dot(x + 4, by + 6, Color.rgb(220, 160, 130, 0.6));
+        dot(x + 9, by + 6, Color.rgb(220, 160, 130, 0.6));
+        // Beard stubble (subtle on some)
+        dot(x + 5, by + 7, SKIN_DK);
+        dot(x + 8, by + 7, SKIN_DK);
 
         // ── Body (robe) ──
         fill(x + 3, by + 8, 8, 5, robe);
+        // Robe shading — left dark, right light
         fill(x + 3, by + 8, 1, 5, robeDk);
         fill(x + 10, by + 8, 1, 5, robeDk);
-        fill(x + 5, by + 8, 4, 1, robeHi);
-        // Collar
-        fill(x + 5, by + 8, 4, 1, WHITE);
-        dot(x + 5, by + 8, VLT_GRAY);
-        dot(x + 8, by + 8, VLT_GRAY);
-        // Sash
-        fill(x + 6, by + 9, 2, 4, SASH);
-        dot(x + 6, by + 9, SASH.brighter());
-        // Robe pattern
-        dot(x + 4, by + 10, robeDk);
-        dot(x + 9, by + 10, robeDk);
+        // Collar / neckline
+        fill(x + 5, by + 8, 4, 1, robe.brighter());
+        dot(x + 6, by + 8, robe.brighter().brighter());
+        dot(x + 7, by + 8, robe.brighter().brighter());
+        // Robe fold lines
+        dot(x + 5, by + 10, robeDk);
+        dot(x + 8, by + 10, robeDk);
+        dot(x + 6, by + 11, robeDk);
+        dot(x + 7, by + 12, robeDk);
+        // Belt / sash
+        fill(x + 3, by + 12, 8, 1, robeDk.darker());
+        dot(x + 6, by + 12, GOLD);  // belt buckle
 
         // ── Arms ──
         if (frame == 0) {
+            // Thinking — right arm raised, hand on chin
             fill(x + 1, by + 8, 2, 4, robe);
-            dot(x + 1, by + 8, robeHi);
-            fill(x + 11, by + 5, 2, 5, robe);
-            dot(x + 11, by + 5, SKIN);
-            dot(x + 12, by + 5, SKIN);
+            dot(x + 1, by + 8, robeDk);
+            fill(x + 11, by + 6, 2, 5, robe);
+            dot(x + 11, by + 6, robeDk);
+            // Hand on chin
+            fill(x + 10, by + 5, 2, 2, SKIN);
+            dot(x + 10, by + 5, SKIN_LT);
         } else if (frame == 1) {
+            // Eating — right arm reaching with fork
             fill(x + 1, by + 8, 2, 4, robe);
-            dot(x + 1, by + 8, robeHi);
+            dot(x + 1, by + 8, robeDk);
             fill(x + 11, by + 8, 2, 3, robe);
-            dot(x + 12, by + 8, SKIN);
-            // Fork
+            fill(x + 12, by + 8, 1, 2, SKIN);
+            // Fork in hand
             fill(x + 12, by + 5, 1, 4, LT_GRAY);
             dot(x + 11, by + 5, LT_GRAY);
-            dot(x + 13, by + 5, LT_GRAY);
             dot(x + 12, by + 4, LT_GRAY);
+            dot(x + 13, by + 5, LT_GRAY);
         } else {
-            fill(x + 0, by + 7, 3, 4, robe);
-            dot(x + 0, by + 7, robeHi);
-            fill(x + 11, by + 7, 3, 4, robe);
-            dot(x + 13, by + 7, robeDk);
+            // Waiting — arms crossed/fidgeting
+            fill(x + 1, by + 7, 2, 4, robe);
+            fill(x + 11, by + 7, 2, 4, robe);
+            dot(x + 1, by + 7, robeDk);
+            dot(x + 12, by + 7, robeDk);
+            // Clenched hands
+            dot(x + 1, by + 10, SKIN);
+            dot(x + 12, by + 10, SKIN);
         }
 
         // ── Legs (seated) ──
         fill(x + 4, by + 13, 3, 2, DARK_BROWN);
         fill(x + 7, by + 13, 3, 2, DARK_BROWN);
-        fill(x + 4, by + 13, 3, 1, BROWN);
-        fill(x + 7, by + 13, 3, 1, BROWN);
+        // Shoes
+        fill(x + 4, by + 15, 3, 1, BLACK);
+        fill(x + 7, by + 15, 3, 1, BLACK);
 
-        // ── Chair ──
-        fill(x + 1, by + 12, 12, 1, WOOD1);
-        fill(x + 1, by + 12, 12, 1, WOOD_LT);
-        fill(x + 1, by + 13, 1, 4, WOOD2);
-        fill(x + 12, by + 13, 1, 4, WOOD2);
-        fill(x + 1, by + 16, 1, 1, WOOD_DK);
-        fill(x + 12, by + 16, 1, 1, WOOD_DK);
+        // ── Chair — ornate with armrests ──
+        // Seat
+        fill(x + 2, by + 12, 10, 1, WOOD1);
+        fill(x + 2, by + 12, 10, 1, WOOD_LT);  // seat highlight
         // Chair back
-        fill(x + 1, by + 10, 1, 3, WOOD2);
-        dot(x + 1, by + 10, WOOD_LT);
+        fill(x + 2, by + 7, 1, 6, WOOD2);
+        fill(x + 11, by + 7, 1, 6, WOOD2);
+        // Chair back top finial
+        dot(x + 2, by + 7, WOOD_LT);
+        dot(x + 11, by + 7, WOOD_LT);
+        // Chair legs
+        fill(x + 2, by + 13, 1, 4, WOOD2);
+        fill(x + 11, by + 13, 1, 4, WOOD2);
+        fill(x + 2, by + 16, 1, 1, WOOD_DK);
+        fill(x + 11, by + 16, 1, 1, WOOD_DK);
+        // Front chair legs
+        fill(x + 4, by + 15, 1, 2, WOOD2);
+        fill(x + 9, by + 15, 1, 2, WOOD2);
 
         // ── Status particles ──
         if (frame == 0) {
-            // Thought bubble z's
-            dot(x + 2, by - 1, PLUM);
-            fill(x + 0, by - 3, 2, 1, LT_PLUM);
-            dot(x + 1, by - 2, PLUM);
-            dot(x + 3, by - 2, LT_PLUM.deriveColor(0, 1, 1, 0.5));
+            // Thought bubbles
+            dot(x + 1, by - 1, PLUM);
+            dot(x + 0, by - 2, LT_PLUM);
+            dot(x - 1, by - 3, LT_PLUM);
+            dot(x + 2, by - 3, PLUM);
         }
         if (frame == 2) {
-            // ! exclamation
-            fill(x + 6, by - 4, 2, 3, ORANGE);
-            fill(x + 6, by - 1, 2, 1, ORANGE);
+            // ! exclamation for waiting
+            fill(x + 5, by - 4, 3, 2, ORANGE);
+            fill(x + 5, by - 2, 3, 1, ORANGE);
             dot(x + 6, by - 4, GOLD);
         }
     }
@@ -629,13 +758,23 @@ public class PixelGameCanvas extends Canvas {
         fill(x, y + 1, 2, 2, VLT_GRAY);
     }
 
-    /** Round table (top-down view) */
+    /** Round table (top-down view) — HD-2D with 3D bevel, textured cloth, shadow */
     public void drawRoundTable(int cx, int cy, int radius) {
+        // Drop shadow beneath table
+        int sR = radius + 2;
+        for (int dy = -sR; dy <= sR; dy++) {
+            int dx = (int) (Math.sqrt(sR * sR - dy * dy));
+            fill(cx - dx + 1, cy + dy + 2, dx * 2 + 1, 1, Color.rgb(40, 30, 20, 0.35));
+        }
+        // Main table surface
         for (int dy = -radius; dy <= radius; dy++) {
             int dx = (int) (Math.sqrt(radius * radius - dy * dy));
-            fill(cx - dx, cy + dy, dx * 2 + 1, 1, WOOD1);
+            // Subtle vertical gradient on wood (lighter at top)
+            double t = (double)(dy + radius) / (2.0 * radius);
+            Color wood = WOOD1.interpolate(WOOD2, t);
+            fill(cx - dx, cy + dy, dx * 2 + 1, 1, wood);
         }
-        // Edge ring
+        // Outer bevel ring — dark edge
         for (int dy = -radius; dy <= radius; dy++) {
             int dx = (int) (Math.sqrt(radius * radius - dy * dy));
             dot(cx - dx, cy + dy, WOOD_DK);
@@ -643,76 +782,180 @@ public class PixelGameCanvas extends Canvas {
         }
         for (int dx2 = -radius; dx2 <= radius; dx2++) {
             int dy2 = (int) (Math.sqrt(radius * radius - dx2 * dx2));
-            dot(cx + dx2, cy - dy2, WOOD_DK);
-            dot(cx + dx2, cy + dy2, WOOD_DK);
+            dot(cx + dx2, cy - dy2, WOOD_LT);  // top edge catches light
+            dot(cx + dx2, cy + dy2, WOOD_DK);   // bottom edge in shadow
         }
-        // Tablecloth center
+        // Inner bevel ring
+        int midR = radius - 2;
+        for (int dx2 = -midR; dx2 <= midR; dx2++) {
+            int dy2 = (int) (Math.sqrt(midR * midR - dx2 * dx2));
+            dot(cx + dx2, cy - dy2, WOOD_LT);
+            dot(cx + dx2, cy + dy2, Color.web("#604028"));
+        }
+        // Tablecloth center with texture
         int inner = radius - 4;
         for (int dy = -inner; dy <= inner; dy++) {
             int dx = (int) (Math.sqrt(inner * inner - dy * dy));
-            fill(cx - dx, cy + dy, dx * 2 + 1, 1, CREAM);
+            Color cloth = ((dy + inner) % 3 == 0) ? CREAM : Color.web("#e8d4b0");
+            fill(cx - dx, cy + dy, dx * 2 + 1, 1, cloth);
         }
-        // Center plate
-        fill(cx - 2, cy - 2, 5, 5, WHITE);
+        // Cloth border embroidery
+        for (int dx2 = -inner; dx2 <= inner; dx2++) {
+            int dy2 = (int) (Math.sqrt(inner * inner - dx2 * dx2));
+            dot(cx + dx2, cy - dy2, DK_RED);
+            dot(cx + dx2, cy + dy2, DK_RED);
+        }
+        // Center decorative plate
+        fill(cx - 3, cy - 3, 7, 7, WHITE);
+        fill(cx - 2, cy - 2, 5, 5, VLT_GRAY);
+        fill(cx - 2, cy - 2, 5, 1, WHITE); // plate shine
         fill(cx - 1, cy - 1, 3, 3, GOLD);
         dot(cx, cy, RED);
+        dot(cx - 1, cy - 1, DK_GOLD); // plate shadow
     }
 
     // ═══════════════════════════════════════
     //  DECORATIONS
     // ═══════════════════════════════════════
 
-    /** Torch on wall */
+    /** Torch on wall — HD-2D with multi-tone flame, glow, and embers */
     public void drawTorch(int x, int y, int frame) {
-        fill(x + 1, y + 4, 1, 3, BROWN);
-        fill(x, y + 7, 3, 1, BROWN);
+        // Wall bracket (metallic)
+        fill(x, y + 7, 3, 1, DK_GRAY);
+        dot(x + 1, y + 7, LT_GRAY);
+        // Torch handle
+        fill(x + 1, y + 4, 1, 3, DARK_BROWN);
+        dot(x + 1, y + 4, BROWN);
+        // Ambient glow on wall behind flame
+        dot(x - 1, y + 2, Color.rgb(255, 160, 40, 0.15));
+        dot(x + 3, y + 2, Color.rgb(255, 160, 40, 0.15));
+        dot(x, y - 1, Color.rgb(255, 200, 80, 0.1));
+        dot(x + 2, y - 1, Color.rgb(255, 200, 80, 0.1));
+        // Multi-tone flame animation
         if (frame % 4 < 2) {
-            fill(x, y + 1, 3, 3, ORANGE);
-            fill(x + 1, y, 1, 1, GOLD);
-            dot(x, y + 1, GOLD);
+            // Flame shape 1 — tall
+            fill(x, y + 2, 3, 2, ORANGE);          // outer flame
+            fill(x, y + 1, 3, 1, DK_ORANGE);        // mid flame
+            fill(x + 1, y, 1, 3, GOLD);             // inner flame
+            dot(x + 1, y + 1, Color.web("#fff0c0")); // white-hot core
+            dot(x + 1, y, Color.web("#ffe880"));      // bright tip
+            // Ember sparks
+            dot(x + 2, y - 1, Color.rgb(255, 100, 30, 0.7));
+            dot(x - 1, y, Color.rgb(255, 140, 40, 0.5));
         } else {
+            // Flame shape 2 — wide
             fill(x, y + 2, 3, 2, ORANGE);
-            fill(x, y + 1, 3, 1, GOLD);
-            dot(x + 1, y, RED);
-            dot(x + 2, y + 1, GOLD);
+            fill(x, y + 1, 3, 2, DK_ORANGE);
+            fill(x + 1, y + 1, 1, 2, GOLD);
+            dot(x + 1, y + 1, Color.web("#fff0c0")); // white-hot core
+            dot(x, y, GOLD);
+            dot(x + 2, y, RED);
+            // Ember sparks (different positions)
+            dot(x, y - 1, Color.rgb(255, 120, 30, 0.6));
+            dot(x + 3, y, Color.rgb(255, 80, 20, 0.4));
         }
     }
 
-    /** Window on wall */
+    /** Window on wall — HD-2D with night sky, stars, and glass refraction */
     public void drawWindow(int x, int y) {
-        fill(x, y, 10, 10, BROWN);
-        fill(x + 1, y + 1, 8, 8, SKY_BLUE);
-        fill(x + 1, y + 1, 8, 2, SKY_LT);
+        // Outer frame with depth
+        fill(x, y, 10, 10, DARK_BROWN);
+        fill(x + 1, y, 8, 1, WOOD_LT);   // top frame highlight
+        fill(x, y, 1, 10, WOOD_LT);       // left frame highlight
+        fill(x + 9, y, 1, 10, WOOD_DK);   // right frame shadow
+        fill(x, y + 9, 10, 1, WOOD_DK);   // bottom frame shadow
+        // Night sky background
+        fill(x + 1, y + 1, 8, 8, Color.web("#1a1a3a"));
+        fill(x + 1, y + 1, 8, 3, Color.web("#202050")); // lighter near horizon
+        fill(x + 1, y + 6, 8, 3, Color.web("#151530")); // darker at bottom
+        // Stars
+        dot(x + 2, y + 2, Color.web("#ffffcc"));
+        dot(x + 7, y + 1, Color.web("#ccccff"));
+        dot(x + 4, y + 3, Color.web("#eeeedd"));
+        dot(x + 8, y + 4, Color.web("#ddddff"));
+        dot(x + 3, y + 6, Color.web("#ffffdd"));
+        // Moon crescent
+        dot(x + 6, y + 2, Color.web("#f0e8c0"));
+        dot(x + 7, y + 2, Color.web("#e8e0b0"));
+        dot(x + 6, y + 3, Color.web("#e8e0b0"));
+        // Window dividers
         fill(x + 5, y + 1, 1, 8, BROWN);
         fill(x + 1, y + 5, 8, 1, BROWN);
+        // Glass refraction / warm interior light reflection
+        dot(x + 2, y + 1, Color.rgb(255, 200, 120, 0.3));
+        dot(x + 3, y + 2, Color.rgb(255, 200, 120, 0.2));
+        dot(x + 7, y + 6, Color.rgb(255, 180, 100, 0.25));
     }
 
-    /** Painting/picture on wall */
+    /** Painting/picture on wall — HD-2D with gilded frame, shadow, and art detail */
     public void drawPainting(int x, int y, Color frameColor, Color art1, Color art2) {
+        // Drop shadow behind frame
+        fill(x + 1, y + 1, 8, 6, Color.rgb(30, 20, 10, 0.4));
+        // Ornate frame
         fill(x, y, 8, 6, frameColor);
+        fill(x, y, 8, 1, frameColor.brighter());    // top highlight
+        fill(x, y, 1, 6, frameColor.brighter());    // left highlight
+        fill(x + 7, y, 1, 6, frameColor.darker());  // right shadow
+        fill(x, y + 5, 8, 1, frameColor.darker());  // bottom shadow
+        // Gold corner accents
+        dot(x, y, DK_GOLD);
+        dot(x + 7, y, DK_GOLD);
+        dot(x, y + 5, DK_GOLD);
+        dot(x + 7, y + 5, DK_GOLD);
+        // Art canvas
         fill(x + 1, y + 1, 6, 4, art1);
         fill(x + 2, y + 3, 4, 2, art2);
         fill(x + 3, y + 2, 2, 1, art2.brighter());
+        // Highlight shimmer on canvas
+        dot(x + 1, y + 1, art1.deriveColor(0, 0.7, 1.3, 1.0));
     }
 
-    /** Barrel */
+    /** Barrel — HD-2D with stave detail, metallic bands, and shadow */
     public void drawBarrel(int x, int y) {
-        fill(x + 1, y, 4, 1, BROWN);
+        // Drop shadow
+        fill(x + 1, y + 7, 5, 1, Color.rgb(30, 20, 10, 0.4));
+        // Top rim
+        fill(x + 1, y, 4, 1, WOOD_LT);
+        dot(x + 2, y, WOOD1.brighter());
+        // Staves
         fill(x, y + 1, 6, 5, WOOD1);
-        fill(x, y + 1, 1, 5, WOOD_DK);
-        fill(x + 5, y + 1, 1, 5, WOOD_DK);
+        fill(x, y + 1, 1, 5, WOOD_DK);      // left shadow stave
+        fill(x + 5, y + 1, 1, 5, WOOD_DK);  // right shadow stave
+        fill(x + 1, y + 1, 1, 5, WOOD1.deriveColor(0, 0.9, 1.1, 1.0)); // highlight stave
+        // Wood grain on center stave
+        dot(x + 3, y + 2, WOOD_LT);
+        dot(x + 3, y + 4, WOOD_LT);
+        // Metal band with shine
         fill(x, y + 3, 6, 1, DK_GRAY);
-        fill(x + 1, y + 6, 4, 1, BROWN);
+        dot(x + 2, y + 3, LT_GRAY); // metallic highlight
+        dot(x + 4, y + 3, LT_GRAY);
+        // Second band
+        fill(x, y + 1, 6, 1, Color.web("#585858"));
+        dot(x + 3, y + 1, LT_GRAY);
+        // Bottom rim
+        fill(x + 1, y + 6, 4, 1, WOOD_DK);
     }
 
-    /** Crate */
+    /** Crate — HD-2D with planked texture, nails, and cast shadow */
     public void drawCrate(int x, int y) {
+        // Cast shadow
+        fill(x + 1, y + 6, 6, 1, Color.rgb(30, 20, 10, 0.35));
+        // Main body
         fill(x, y, 6, 6, WOOD2);
-        fill(x, y, 6, 1, WOOD_LT);
-        fill(x, y, 1, 6, WOOD_LT);
-        fill(x + 5, y, 1, 6, WOOD_DK);
-        fill(x, y + 5, 6, 1, WOOD_DK);
-        // X pattern
+        // Plank lines
+        fill(x + 2, y, 1, 6, WOOD2.darker());
+        fill(x + 4, y, 1, 6, WOOD2.darker());
+        // 3D bevel edges
+        fill(x, y, 6, 1, WOOD_LT);       // top highlight
+        fill(x, y, 1, 6, WOOD_LT);       // left highlight
+        fill(x + 5, y, 1, 6, WOOD_DK);   // right shadow
+        fill(x, y + 5, 6, 1, WOOD_DK);   // bottom shadow
+        // Corner reinforcement (metallic)
+        dot(x, y, DK_GRAY);
+        dot(x + 5, y, DK_GRAY);
+        dot(x, y + 5, DK_GRAY);
+        dot(x + 5, y + 5, DK_GRAY);
+        // X brace pattern
         dot(x + 1, y + 1, WOOD_DK);
         dot(x + 4, y + 1, WOOD_DK);
         dot(x + 2, y + 2, WOOD_DK);
@@ -721,100 +964,194 @@ public class PixelGameCanvas extends Canvas {
         dot(x + 3, y + 3, WOOD_DK);
         dot(x + 1, y + 4, WOOD_DK);
         dot(x + 4, y + 4, WOOD_DK);
+        // Nail heads
+        dot(x + 1, y + 1, LT_GRAY);
+        dot(x + 4, y + 4, LT_GRAY);
     }
 
-    /** Warning stripes (factory) */
+    /** Warning stripes (factory) — HD-2D with embossed look */
     public void drawWarningStripes(int x, int y, int w) {
-        fill(x, y, w, 2, GOLD);
+        fill(x, y, w, 1, DK_GOLD);  // top shadow line
+        fill(x, y + 1, w, 2, GOLD);
+        fill(x, y + 3, w, 1, Color.web("#a08020")); // bottom shadow
         for (int i = 0; i < w; i += 4) {
             int dw = Math.min(2, w - i);
-            fill(x + i, y, dw, 2, BLACK);
+            fill(x + i, y, dw, 3, BLACK);
+            dot(x + i, y, Color.web("#303030")); // stripe highlight
         }
     }
 
-    /** Pipe (horizontal) */
+    /** Pipe (horizontal) — HD-2D with metallic sheen and bolted joints */
     public void drawPipeH(int x, int y, int w) {
-        fill(x, y, w, 1, DK_GRAY);
-        fill(x, y + 1, w, 2, LT_GRAY);
-        fill(x, y + 1, w, 1, VLT_GRAY);
-        fill(x, y + 3, w, 1, DK_GRAY);
-        // Joints
+        fill(x, y, w, 1, Color.web("#404040"));     // top shadow
+        fill(x, y + 1, w, 1, VLT_GRAY);              // top shine
+        fill(x, y + 2, w, 1, LT_GRAY);               // body
+        fill(x, y + 3, w, 1, Color.web("#404040"));  // bottom shadow
+        // Joints with bolts
         for (int jx = x + 8; jx < x + w - 2; jx += 16) {
             fill(jx, y, 3, 4, GRAY);
+            fill(jx, y, 3, 1, LT_GRAY);  // joint highlight
+            // Bolts
+            dot(jx, y + 1, DK_GRAY);
+            dot(jx + 2, y + 2, DK_GRAY);
+        }
+        // End caps
+        fill(x, y, 1, 4, GRAY);
+        fill(x + w - 1, y, 1, 4, GRAY);
+    }
+
+    /** Pipe (vertical) — HD-2D with metallic sheen */
+    public void drawPipeV(int x, int y, int h) {
+        fill(x, y, 1, h, Color.web("#404040"));      // left shadow
+        fill(x + 1, y, 1, h, VLT_GRAY);               // left shine
+        fill(x + 2, y, 1, h, LT_GRAY);                // body
+        fill(x + 3, y, 1, h, Color.web("#404040"));   // right shadow
+        // Joint rings
+        for (int jy = y + 6; jy < y + h - 2; jy += 12) {
+            fill(x, jy, 4, 1, GRAY);
+            dot(x + 1, jy, LT_GRAY);
         }
     }
 
-    /** Pipe (vertical) */
-    public void drawPipeV(int x, int y, int h) {
-        fill(x, y, 1, h, DK_GRAY);
-        fill(x + 1, y, 2, h, LT_GRAY);
-        fill(x + 1, y, 1, h, VLT_GRAY);
-        fill(x + 3, y, 1, h, DK_GRAY);
-    }
-
-    /** Gauge/meter on wall */
+    /** Gauge/meter on wall — HD-2D with chrome bezel and LED indicator */
     public void drawGauge(int x, int y, double value) {
+        // Chrome bezel
         fill(x, y, 6, 6, DK_GRAY);
+        fill(x, y, 6, 1, LT_GRAY);   // top shine
+        fill(x, y, 1, 6, LT_GRAY);   // left shine
+        fill(x + 5, y, 1, 6, Color.web("#303030")); // right shadow
+        fill(x, y + 5, 6, 1, Color.web("#303030")); // bottom shadow
+        // Dial face
         fill(x + 1, y + 1, 4, 4, BLACK);
-        // Needle position based on value
+        // Scale markings
+        dot(x + 1, y + 3, DK_GRAY);
+        dot(x + 2, y + 3, DK_GRAY);
+        dot(x + 3, y + 3, DK_GRAY);
+        dot(x + 4, y + 3, DK_GRAY);
+        // Needle
         int needleX = x + 1 + (int)(value * 3);
-        fill(needleX, y + 2, 1, 2, RED);
-        dot(x + 1, y + 4, GREEN);
+        fill(needleX, y + 1, 1, 3, RED);
+        dot(needleX, y + 1, Color.web("#ff6060"));
+        // Status LED
+        dot(x + 1, y + 4, value > 0.5 ? RED : GREEN);
+        dot(x + 4, y + 4, GOLD);
     }
 
-    /** Mine entrance (dark opening with supports) */
+    /** Mine entrance — HD-2D with depth, lantern light, and reinforced beams */
     public void drawMineEntrance(int x, int y) {
-        // Support beams
+        // Shadow around entrance
+        fill(x - 1, y + 1, 22, 20, Color.rgb(20, 15, 10, 0.3));
+        // Support beams with wood grain
         fill(x, y, 2, 20, WOOD2);
         fill(x + 18, y, 2, 20, WOOD2);
+        fill(x, y, 1, 20, WOOD_LT);        // left beam highlight
+        fill(x + 19, y, 1, 20, WOOD_DK);   // right beam shadow
+        // Top beam with highlight
         fill(x, y, 20, 2, WOOD1);
+        fill(x, y, 20, 1, WOOD_LT);
         // Cross beam
         fill(x + 2, y + 2, 16, 1, WOOD_DK);
-        // Dark interior
+        // Metal reinforcement brackets
+        fill(x + 1, y + 2, 2, 2, DK_GRAY);
+        fill(x + 17, y + 2, 2, 2, DK_GRAY);
+        dot(x + 1, y + 2, LT_GRAY);
+        dot(x + 17, y + 2, LT_GRAY);
+        // Dark interior with depth gradient
         fill(x + 2, y + 3, 16, 17, BLACK);
-        fill(x + 3, y + 3, 14, 1, Color.web("#2a2028"));
-        // Rail tracks coming out
+        fill(x + 3, y + 3, 14, 2, Color.web("#2a2028"));
+        fill(x + 4, y + 5, 12, 2, Color.web("#1a1018"));
+        // Lantern glow inside
+        dot(x + 4, y + 5, Color.rgb(255, 180, 80, 0.4));
+        dot(x + 5, y + 6, Color.rgb(255, 160, 60, 0.3));
+        // Rail tracks with metallic shine
         fill(x + 6, y + 18, 8, 2, GRAY);
+        fill(x + 6, y + 18, 8, 1, LT_GRAY); // rail shine
         fill(x + 7, y + 17, 1, 3, BROWN);
         fill(x + 12, y + 17, 1, 3, BROWN);
+        // Wooden rail ties
+        fill(x + 6, y + 19, 8, 1, WOOD_DK);
     }
 
-    /** Shelf with bottles */
+    /** Shelf with bottles — HD-2D with wood brackets, bottle shine, and shadow */
     public void drawShelf(int x, int y) {
+        // Wall brackets
+        fill(x + 1, y + 4, 1, 2, WOOD_DK);
+        fill(x + 10, y + 4, 1, 2, WOOD_DK);
+        // Shelf plank with depth
         fill(x, y + 4, 12, 1, WOOD1);
-        fill(x, y + 4, 12, 1, WOOD_DK);
-        // Bottles
+        fill(x, y + 4, 12, 1, WOOD_LT); // top surface highlight
+        fill(x, y + 5, 12, 1, WOOD_DK); // underside shadow
+        // Bottles with shine
         Color[] bottleColors = {GREEN, RED, TEAL, GOLD};
         for (int i = 0; i < 4; i++) {
-            fill(x + 1 + i * 3, y + 1, 2, 3, bottleColors[i]);
-            dot(x + 1 + i * 3, y, bottleColors[i].darker());
+            Color bc = bottleColors[i];
+            fill(x + 1 + i * 3, y + 1, 2, 3, bc);
+            dot(x + 1 + i * 3, y, bc.darker()); // cork/cap
+            // Glass shine
+            dot(x + 1 + i * 3, y + 1, bc.brighter());
+            // Label on bottle
+            dot(x + 1 + i * 3, y + 2, bc.desaturate().brighter());
+            dot(x + 2 + i * 3, y + 2, bc.desaturate().brighter());
+        }
+        // Shadow beneath bottles on shelf
+        for (int i = 0; i < 4; i++) {
+            dot(x + 1 + i * 3, y + 4, WOOD_DK);
         }
     }
 
-    /** Fireplace */
+    /** Fireplace — HD-2D with multi-tone fire, embers, white core, brick detail */
     public void drawFireplace(int x, int y, int frame) {
-        // Brick structure
+        // Brick mantle with depth
         fill(x, y, 16, 2, BRICK2);
+        fill(x, y, 16, 1, BRICK_LT);  // top highlight
         fill(x + 1, y + 2, 14, 12, BRICK1);
+        // Brick detail on sides
+        fill(x + 1, y + 2, 2, 12, BRICK2);
+        fill(x + 13, y + 2, 2, 12, BRICK2);
+        dot(x + 1, y + 3, BRICK_LT);
+        dot(x + 14, y + 5, BRICK_LT);
+        dot(x + 1, y + 7, BRICK_LT);
+        dot(x + 14, y + 9, BRICK_LT);
+        // Firebox interior
         fill(x + 3, y + 4, 10, 10, BLACK);
-        // Fire
+        fill(x + 3, y + 4, 10, 1, Color.web("#1a1018")); // soot line
+        // Ambient glow on interior walls
+        fill(x + 3, y + 8, 1, 6, Color.web("#3a1808"));
+        fill(x + 12, y + 8, 1, 6, Color.web("#3a1808"));
+        // Fire animation with multi-tone flames
         if (frame % 3 == 0) {
-            fill(x + 5, y + 8, 6, 6, ORANGE);
-            fill(x + 6, y + 6, 4, 4, GOLD);
-            dot(x + 7, y + 5, GOLD);
+            fill(x + 5, y + 8, 6, 6, ORANGE);            // outer
+            fill(x + 6, y + 7, 4, 5, GOLD);               // mid
+            fill(x + 7, y + 6, 2, 3, Color.web("#fff0b0")); // white-hot core
+            dot(x + 7, y + 5, Color.web("#ffe8a0"));       // flame tip
+            dot(x + 5, y + 8, RED);                        // ember
+            dot(x + 10, y + 9, DK_ORANGE);
         } else if (frame % 3 == 1) {
             fill(x + 4, y + 9, 8, 5, ORANGE);
-            fill(x + 5, y + 7, 6, 4, GOLD);
-            dot(x + 8, y + 6, RED);
+            fill(x + 5, y + 7, 6, 5, GOLD);
+            fill(x + 6, y + 7, 4, 3, Color.web("#fff0b0"));
+            dot(x + 8, y + 6, Color.web("#ffe8a0"));
+            dot(x + 4, y + 10, RED);
+            dot(x + 11, y + 10, DK_ORANGE);
         } else {
             fill(x + 5, y + 8, 6, 6, ORANGE);
-            fill(x + 6, y + 7, 4, 3, GOLD);
-            dot(x + 6, y + 6, GOLD);
+            fill(x + 6, y + 7, 4, 4, GOLD);
+            fill(x + 7, y + 7, 2, 2, Color.web("#fff0b0"));
+            dot(x + 6, y + 6, Color.web("#ffe8a0"));
             dot(x + 9, y + 7, RED);
+            dot(x + 5, y + 9, DK_ORANGE);
         }
-        // Logs
+        // Floating ember sparks above fire
+        int emX = x + 6 + (frame % 5);
+        int emY = y + 4 - (frame % 3);
+        if (emY >= y + 4) dot(emX, emY, Color.rgb(255, 120, 30, 0.6));
+        // Logs with detail
         fill(x + 4, y + 12, 8, 2, WOOD_DK);
         fill(x + 5, y + 11, 6, 1, WOOD2);
+        dot(x + 5, y + 12, WOOD2);        // log end grain
+        dot(x + 11, y + 12, WOOD2);
+        // Glow on hearth floor
+        fill(x + 5, y + 13, 6, 1, Color.rgb(200, 100, 20, 0.3));
     }
 
     /** Draw pixel text using the loaded font */

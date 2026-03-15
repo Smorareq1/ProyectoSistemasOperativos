@@ -1,168 +1,197 @@
 /* ============================================================
-   AppTheme.css — PIXEL ART WARM RETRO THEME
-   Inspired by isometric pixel art games
-   Warm oranges, creams, browns, and teal accents
+   AppTheme.css — HD-2D RETRO-MODERN PREMIUM THEME
+   Warm tavern palette: deep browns, burnt orange, parchment gold
+   Floating panel aesthetic with warm drop shadows
    ============================================================ */
 
 /* ---- Base / Root ---- */
 .root {
-    -fx-background-color: #f5e6c8;
+    -fx-background-color: #2a1e14;
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
     -fx-font-size: 10;
 }
 
 .label {
-    -fx-text-fill: #5a3e28;
+    -fx-text-fill: #e8d4b0;
 }
 
 /* ---- Menu Root ---- */
 .menu-root {
-    -fx-background-color: linear-gradient(to bottom, #f5e6c8, #e8d0a8, #f5e6c8);
+    -fx-background-color: linear-gradient(to bottom, #3a2818, #2a1e14, #1a1008);
 }
 
 /* ---- ASCII Banner ---- */
 .ascii-banner {
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
     -fx-font-size: 9;
-    -fx-text-fill: #d4572a;
+    -fx-text-fill: #f0c040;
     -fx-font-weight: bold;
     -fx-padding: 10;
-    -fx-effect: dropshadow(three-pass-box, #e8682a, 4, 0.15, 2, 2);
+    -fx-effect: dropshadow(three-pass-box, #e8682a, 8, 0.25, 2, 2);
 }
 
 /* ---- Typography ---- */
 .title-label {
     -fx-font-size: 14;
     -fx-font-weight: bold;
-    -fx-text-fill: #4a3728;
+    -fx-text-fill: #f0dcc0;
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
-    -fx-effect: dropshadow(three-pass-box, #d4572a, 6, 0.3, 2, 2);
+    -fx-effect: dropshadow(three-pass-box, #e8682a, 8, 0.4, 2, 2);
 }
 
 .subtitle-label {
     -fx-font-size: 10;
     -fx-font-weight: bold;
-    -fx-text-fill: #3898b8;
+    -fx-text-fill: #60c0e0;
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
-    -fx-effect: dropshadow(three-pass-box, rgba(56,152,184,0.3), 4, 0, 0, 0);
+    -fx-effect: dropshadow(three-pass-box, rgba(56,152,184,0.5), 6, 0.2, 0, 0);
 }
 
 .credits-label {
     -fx-font-size: 8;
-    -fx-text-fill: #8b7355;
+    -fx-text-fill: #a08860;
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
 
 .section-title {
     -fx-font-size: 9;
     -fx-font-weight: bold;
-    -fx-text-fill: #d4572a;
+    -fx-text-fill: #f0c040;
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
-    -fx-effect: dropshadow(three-pass-box, rgba(212,87,42,0.3), 3, 0, 1, 1);
+    -fx-effect: dropshadow(three-pass-box, rgba(240,192,64,0.4), 4, 0.15, 1, 1);
     -fx-padding: 6 0 2 0;
 }
 
 .decor-label {
     -fx-font-size: 16;
-    -fx-text-fill: #c4a882;
+    -fx-text-fill: #8b7355;
     -fx-padding: 10 0 0 0;
 }
 
-/* ---- Menu Screen Buttons ---- */
+/* ---- Config label ---- */
+.config-label {
+    -fx-text-fill: #f0dcc0;
+    -fx-font-weight: bold;
+}
+
+.speed-label {
+    -fx-text-fill: #f0c040;
+    -fx-font-weight: bold;
+}
+
+/* ---- Top Bar ---- */
+.dp-top-bar {
+    -fx-background-color: linear-gradient(to bottom, #3a2818, #2a1e14);
+    -fx-padding: 8 12;
+    -fx-border-color: #1a1008;
+    -fx-border-width: 0 0 3 0;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 6, 0, 0, 3);
+}
+
+.dp-controls {
+    -fx-background-color: #2a1e14;
+    -fx-padding: 6 12;
+    -fx-border-color: #4a3020;
+    -fx-border-width: 0 0 2 0;
+}
+
+/* ---- Menu Screen Buttons — Parchment Plate Style ---- */
 .menu-button {
-    -fx-background-color: #e8682a;
+    -fx-background-color: linear-gradient(to bottom, #e8682a, #c45020);
     -fx-text-fill: #fff8e8;
     -fx-font-size: 11;
     -fx-font-weight: bold;
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
     -fx-padding: 14 30;
     -fx-background-radius: 0;
-    -fx-border-color: #4a3728;
-    -fx-border-width: 4;
+    -fx-border-color: #f0c040 #8b2018 #8b2018 #f0c040;
+    -fx-border-width: 3;
     -fx-border-radius: 0;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(three-pass-box, rgba(74,55,40,0.6), 6, 0, 3, 3);
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.7), 8, 0, 3, 4);
 }
 
 .menu-button:hover {
-    -fx-background-color: #f0c040;
-    -fx-text-fill: #4a3728;
-    -fx-border-color: #d4572a;
-    -fx-effect: dropshadow(three-pass-box, #f0c040, 14, 0.4, 0, 0);
+    -fx-background-color: linear-gradient(to bottom, #f0c040, #daa830);
+    -fx-text-fill: #2a1e14;
+    -fx-border-color: #fff8e8 #c89828 #c89828 #fff8e8;
+    -fx-effect: dropshadow(three-pass-box, #f0c040, 16, 0.5, 0, 0);
 }
 
 .menu-button:pressed {
-    -fx-background-color: #c83830;
+    -fx-background-color: linear-gradient(to bottom, #8b2018, #c83830);
     -fx-text-fill: #fff8e8;
-    -fx-border-color: #8b2018;
-    -fx-effect: dropshadow(three-pass-box, #c83830, 8, 0.3, 0, 0);
+    -fx-border-color: #6a1810 #c83830 #c83830 #6a1810;
+    -fx-effect: dropshadow(three-pass-box, #c83830, 10, 0.3, 0, 0);
 }
 
-/* ---- Control Buttons (Play/Pause/Stop) ---- */
+/* ---- Control Buttons — Embossed Metal Plate ---- */
 .control-button {
-    -fx-background-color: #f0dcc0;
-    -fx-text-fill: #4a3728;
+    -fx-background-color: linear-gradient(to bottom, #f0dcc0, #d8c4a0);
+    -fx-text-fill: #2a1e14;
     -fx-font-size: 8;
     -fx-font-weight: bold;
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
     -fx-padding: 6 12;
     -fx-background-radius: 0;
-    -fx-border-color: #6b4c38;
+    -fx-border-color: #fff8e8 #6b4c38 #6b4c38 #fff8e8;
     -fx-border-width: 3;
     -fx-border-radius: 0;
     -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 4, 0, 2, 2);
 }
 
 .control-button:hover {
-    -fx-background-color: #e8682a;
+    -fx-background-color: linear-gradient(to bottom, #e8682a, #d45820);
     -fx-text-fill: #fff8e8;
-    -fx-border-color: #4a3728;
-    -fx-effect: dropshadow(three-pass-box, #e8682a, 10, 0.3, 0, 0);
+    -fx-border-color: #f0c040 #4a3020 #4a3020 #f0c040;
+    -fx-effect: dropshadow(three-pass-box, #e8682a, 12, 0.4, 0, 0);
 }
 
 .control-button:pressed {
-    -fx-background-color: #c83830;
+    -fx-background-color: linear-gradient(to bottom, #8b2018, #c83830);
     -fx-text-fill: #fff8e8;
-    -fx-border-color: #8b2018;
+    -fx-border-color: #6a1810 #c83830 #c83830 #6a1810;
 }
 
-/* ---- Back Button ---- */
+/* ---- Back Button — Scroll/Parchment ---- */
 .back-button {
-    -fx-background-color: #f0dcc0;
-    -fx-text-fill: #d4572a;
+    -fx-background-color: linear-gradient(to bottom, #f0dcc0, #d8c4a0);
+    -fx-text-fill: #e8682a;
     -fx-font-size: 8;
     -fx-font-weight: bold;
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
     -fx-cursor: hand;
     -fx-padding: 6 10;
-    -fx-border-color: #6b4c38;
+    -fx-border-color: #fff8e8 #6b4c38 #6b4c38 #fff8e8;
     -fx-border-width: 3;
     -fx-background-radius: 0;
     -fx-border-radius: 0;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 4, 0, 2, 2);
 }
 
 .back-button:hover {
-    -fx-background-color: #e8682a;
+    -fx-background-color: linear-gradient(to bottom, #e8682a, #d45820);
     -fx-text-fill: #fff8e8;
-    -fx-border-color: #4a3728;
-    -fx-effect: dropshadow(three-pass-box, #e8682a, 8, 0.3, 0, 0);
+    -fx-border-color: #f0c040 #4a3020 #4a3020 #f0c040;
+    -fx-effect: dropshadow(three-pass-box, #e8682a, 10, 0.4, 0, 0);
 }
 
 /* ---- Status text classes ---- */
 .status-active {
-    -fx-text-fill: #68b030;
+    -fx-text-fill: #90d858;
     -fx-font-weight: bold;
-    -fx-effect: dropshadow(three-pass-box, rgba(104,176,48,0.4), 3, 0, 0, 0);
+    -fx-effect: dropshadow(three-pass-box, rgba(104,176,48,0.6), 4, 0.15, 0, 0);
 }
 
 .status-blocked {
-    -fx-text-fill: #c83830;
+    -fx-text-fill: #e84040;
     -fx-font-weight: bold;
-    -fx-effect: dropshadow(three-pass-box, rgba(200,56,48,0.4), 3, 0, 0, 0);
+    -fx-effect: dropshadow(three-pass-box, rgba(200,56,48,0.6), 4, 0.15, 0, 0);
 }
 
 .status-idle {
-    -fx-text-fill: #8b7355;
+    -fx-text-fill: #a08860;
 }
 
 /* ---- Emoji size classes ---- */
@@ -207,16 +236,17 @@
     -fx-font-size: 8;
     -fx-font-weight: bold;
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 2, 0, 1, 1);
 }
 
 /* ---- Small label ---- */
 .small-label {
     -fx-font-size: 8;
-    -fx-text-fill: #8b7355;
+    -fx-text-fill: #a08860;
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
 }
 
-/* ---- Scroll Pane ---- */
+/* ---- Scroll Pane — Dark parchment ---- */
 .scroll-pane {
     -fx-background-color: transparent;
 }
@@ -225,49 +255,103 @@
     -fx-background-color: transparent;
 }
 
-/* ---- Slider: Pixel Retro Style ---- */
-.slider .track {
-    -fx-background-color: #e0c8a0;
+.scroll-pane .scroll-bar:vertical .track,
+.scroll-pane .scroll-bar:horizontal .track {
+    -fx-background-color: #2a1e14;
     -fx-background-radius: 0;
-    -fx-border-color: #6b4c38;
+    -fx-border-color: #4a3020;
+    -fx-border-width: 1;
+}
+
+.scroll-pane .scroll-bar:vertical .thumb,
+.scroll-pane .scroll-bar:horizontal .thumb {
+    -fx-background-color: linear-gradient(to right, #8b7355, #6b4c38);
+    -fx-background-radius: 0;
+    -fx-border-color: #a08860;
+    -fx-border-width: 1;
+}
+
+.scroll-pane .scroll-bar .increment-button,
+.scroll-pane .scroll-bar .decrement-button {
+    -fx-background-color: #4a3020;
+    -fx-background-radius: 0;
+}
+
+.scroll-pane .scroll-bar .increment-arrow,
+.scroll-pane .scroll-bar .decrement-arrow {
+    -fx-background-color: #a08860;
+}
+
+/* ---- Slider: Carved Wood Style ---- */
+.slider .track {
+    -fx-background-color: linear-gradient(to bottom, #3a2818, #4a3020, #3a2818);
+    -fx-background-radius: 0;
+    -fx-border-color: #1a1008 #6b4c38 #6b4c38 #1a1008;
     -fx-border-width: 2;
-    -fx-pref-height: 6;
+    -fx-pref-height: 8;
 }
 
 .slider .thumb {
-    -fx-background-color: #e8682a;
+    -fx-background-color: linear-gradient(to bottom, #f0c040, #c89828);
     -fx-background-radius: 0;
-    -fx-border-color: #4a3728;
+    -fx-border-color: #fff8e8 #8b6818 #8b6818 #fff8e8;
     -fx-border-width: 2;
     -fx-pref-width: 14;
-    -fx-pref-height: 14;
-    -fx-effect: dropshadow(three-pass-box, rgba(232,104,42,0.5), 4, 0, 0, 0);
+    -fx-pref-height: 16;
+    -fx-effect: dropshadow(three-pass-box, rgba(240,192,64,0.6), 6, 0.2, 0, 0);
 }
 
-/* ---- Spinner ---- */
+.slider .thumb:hover {
+    -fx-background-color: linear-gradient(to bottom, #ffe070, #f0c040);
+    -fx-effect: dropshadow(three-pass-box, #f0c040, 10, 0.4, 0, 0);
+}
+
+.slider .axis .tick-mark {
+    -fx-stroke: #6b4c38;
+}
+
+.slider .axis .tick-label {
+    -fx-text-fill: #a08860;
+    -fx-font-size: 7;
+}
+
+/* ---- Spinner — Ornate Input ---- */
 .spinner {
-    -fx-background-color: #f0dcc0;
-    -fx-border-color: #6b4c38;
+    -fx-background-color: #2a1e14;
+    -fx-border-color: #6b4c38 #1a1008 #1a1008 #6b4c38;
     -fx-border-width: 3;
     -fx-background-radius: 0;
     -fx-border-radius: 0;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 3, 0, 1, 1);
 }
 
 .spinner .text-field {
-    -fx-background-color: #fff8e8;
-    -fx-text-fill: #4a3728;
+    -fx-background-color: #1a1008;
+    -fx-text-fill: #f0c040;
     -fx-font-family: "Press Start 2P", "Consolas", monospace;
     -fx-background-radius: 0;
+    -fx-border-color: #4a3020;
+    -fx-border-width: 0 1 0 0;
 }
 
 .spinner .increment-arrow-button,
 .spinner .decrement-arrow-button {
-    -fx-background-color: #e0c8a0;
+    -fx-background-color: linear-gradient(to bottom, #4a3020, #3a2818);
     -fx-border-color: #6b4c38;
     -fx-background-radius: 0;
 }
 
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover {
+    -fx-background-color: #e8682a;
+}
+
 .spinner .increment-arrow-button .increment-arrow,
 .spinner .decrement-arrow-button .decrement-arrow {
-    -fx-background-color: #d4572a;
+    -fx-background-color: #f0c040;
+}
+
+/* ---- DP Root ---- */
+.dp-root {
+    -fx-background-color: #2a1e14;
 }
