@@ -1,0 +1,173 @@
+/* ============================================================
+   PCView.css — Factory-Themed Producer-Consumer Styles
+   ============================================================ */
+
+/* ---- Root ---- */
+.pc-root {
+    -fx-background-color: linear-gradient(to bottom, #0f0e17, #12111a);
+}
+
+/* ---- Top Bar ---- */
+.pc-top-bar {
+    -fx-background-color: #0a0a12;
+    -fx-border-color: #2cb67d;
+    -fx-border-width: 0 0 3 0;
+    -fx-padding: 10 20 10 20;
+    -fx-effect: dropshadow(three-pass-box, rgba(44,182,125,0.2), 6, 0, 0, 3);
+}
+
+.pc-controls {
+    -fx-padding: 8 20 8 20;
+    -fx-background-color: #12111a;
+    -fx-border-color: #242838;
+    -fx-border-width: 0 0 2 0;
+}
+
+/* ---- Producer Box (Factory Machine) ---- */
+.producer-box {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #2cb67d;
+    -fx-border-width: 3;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 12;
+    -fx-effect: dropshadow(three-pass-box, rgba(44,182,125,0.4), 12, 0, 0, 0);
+}
+
+.machine-frame {
+    -fx-font-size: 14;
+    -fx-text-fill: #393b52;
+    -fx-font-family: "Consolas", monospace;
+}
+
+.smoke-label {
+    -fx-font-size: 24;
+}
+
+.producer-label {
+    -fx-font-size: 12;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2cb67d;
+    -fx-effect: dropshadow(three-pass-box, #2cb67d, 6, 0.3, 0, 0);
+}
+
+.producer-status {
+    -fx-font-size: 11;
+    -fx-text-fill: #a7a9be;
+}
+
+.producer-number {
+    -fx-font-size: 28;
+    -fx-font-weight: bold;
+    -fx-text-fill: #fffffe;
+    -fx-effect: dropshadow(three-pass-box, rgba(255,255,254,0.5), 6, 0, 0, 0);
+}
+
+/* ---- Buffer Box (Conveyor Belt) ---- */
+.buffer-box {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #ff8906;
+    -fx-border-width: 3;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 14;
+    -fx-effect: dropshadow(three-pass-box, rgba(255,137,6,0.3), 12, 0, 0, 0);
+}
+
+.buffer-title {
+    -fx-font-size: 14;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ff8906;
+    -fx-effect: dropshadow(three-pass-box, #ff8906, 6, 0.3, 0, 0);
+}
+
+.buffer-count {
+    -fx-font-size: 14;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ff8906;
+}
+
+.buffer-slot-label {
+    -fx-font-size: 9;
+    -fx-font-weight: bold;
+    -fx-text-fill: #fffffe;
+}
+
+.buffer-slot-emoji {
+    -fx-font-size: 10;
+}
+
+/* ---- Conveyor Arrows ---- */
+.conveyor-arrow {
+    -fx-font-size: 16;
+}
+
+/* ---- Progress Bar (pixel style) ---- */
+.progress-bar .track {
+    -fx-background-color: #0a0a12;
+    -fx-background-radius: 0;
+    -fx-border-color: #393b52;
+    -fx-border-width: 2;
+    -fx-border-radius: 0;
+    -fx-pref-height: 14;
+}
+
+.progress-bar .bar {
+    -fx-background-color: linear-gradient(to right, #ff8906, #e53170);
+    -fx-background-radius: 0;
+    -fx-background-insets: 2;
+    -fx-effect: dropshadow(three-pass-box, rgba(255,137,6,0.5), 6, 0, 0, 0);
+}
+
+/* ---- Consumers Box ---- */
+.consumers-box {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #e53170;
+    -fx-border-width: 3;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 12;
+    -fx-effect: dropshadow(three-pass-box, rgba(229,49,112,0.3), 12, 0, 0, 0);
+}
+
+/* ---- Consumer Cards ---- */
+.consumer-card {
+    -fx-background-color: #12111a;
+    -fx-background-radius: 0;
+}
+
+.consumer-name-par {
+    -fx-font-weight: bold;
+    -fx-font-size: 12;
+    -fx-text-fill: #7f5af0;
+}
+
+.consumer-name-impar {
+    -fx-font-weight: bold;
+    -fx-font-size: 12;
+    -fx-text-fill: #2cb67d;
+}
+
+.consumer-name-primo {
+    -fx-font-weight: bold;
+    -fx-font-size: 12;
+    -fx-text-fill: #ff8906;
+}
+
+.consumer-suma {
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-text-fill: #fffffe;
+    -fx-effect: dropshadow(three-pass-box, rgba(255,255,254,0.3), 4, 0, 0, 0);
+}
+
+.consumer-status {
+    -fx-font-size: 10;
+    -fx-text-fill: #555770;
+}
+
+/* ---- Speed Label ---- */
+.speed-label {
+    -fx-text-fill: #a7a9be;
+    -fx-font-size: 12;
+}

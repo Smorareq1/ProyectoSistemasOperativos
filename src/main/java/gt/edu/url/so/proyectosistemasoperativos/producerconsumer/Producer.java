@@ -1,0 +1,72 @@
+package gt.edu.url.so.proyectosistemasoperativos.producerconsumer;
+
+import gt.edu.url.so.proyectosistemasoperativos.common.LogPanel;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.function.Consumer;
+
+public class Producer extends Thread {
+    private final SharedBuffer buffer;
+    private final LogPanel log;
+    private final Consumer<String> estadoCallback;
+    private final Consumer<Integer> numeroCallback;
+    private volatile boolean running = true;
+    private volatile boolean paused = false;
+    private int delayMs = 500;
+
+    public Producer(SharedBuffer buffer, LogPanel log,
+                    Consumer<String> estadoCallback, Consumer<Integer> numeroCallback) {
+        super("Productor");
+        setDaemon(true);
+        this.buffer = buffer;
+        this.log = log;
+        this.estadoCallback = estadoCallback;
+        this.numeroCallback = numeroCallback;
+    }
+
+    @Override
+    public void run() {
+        try (InputStream is = getClass().getResourceAsStream("/gt/edu/url/so/proyectosistemasoperativos/producerconsumer/data/numeros.txt");
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+
+            String line;
+            while ((line = reader.readLine()) != null && running) {
+                while (paused && running) {
+                    Thread.sleep(100);
+                }
+                if (!running) break;
+
+                line = line.trim();
+                if (line.isEmpty()) continue;
+
+                int numero = Integer.parseInt(line);
+                estadoCallback.accept("BLOQUEADO");
+                log.log("Productor intentando insertar " + numero + " (" + NumberClassifier.clasificar(numero) + ")");
+
+                buffer.insertar(numero);
+
+                estadoCallback.accept("ACTIVO");
+                numeroCallback.accept(numero);
+                TipoNumero tipo = NumberClassifier.clasificar(numero);
+                log.log("Productor inserto " + numero + " (" + tipo + ") en el buffer");
+
+                Thread.sleep(delayMs);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            log.log("Error en productor: " + e.getMessage());
+        } finally {
+            estadoCallback.accept("TERMINADO");
+            log.log("Productor termino de leer el archivo");
+        }
+    }
+
+    public void pausar() { paused = true; }
+    public void reanudar() { paused = false; }
+    public void detener() { running = false; this.interrupt(); }
+    public boolean isRunning() { return running; }
+    public void setDelay(int ms) { this.delayMs = ms; }
+}

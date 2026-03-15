@@ -41,3 +41,11 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### PERSONAL ###
+#PROMPT.md
+.claude/
+.agents/
+.windsurf/
+.agent/
+skills-lock.json

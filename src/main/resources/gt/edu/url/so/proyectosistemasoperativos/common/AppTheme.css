@@ -1,0 +1,257 @@
+/* ============================================================
+   AppTheme.css — PIXEL ART RETRO THEME (Ultra-Graphic Edition)
+   Global styles shared across all views.
+   ============================================================ */
+
+/* ---- Base / Root ---- */
+.root {
+    -fx-background-color: #0f0e17;
+    -fx-font-family: "Segoe UI Emoji", "Consolas", "Courier New", monospace;
+    -fx-font-size: 13;
+}
+
+.label {
+    -fx-text-fill: #a7a9be;
+}
+
+/* ---- Menu Root ---- */
+.menu-root {
+    -fx-background-color: linear-gradient(to bottom, #0f0e17, #1a1a2e, #0f0e17);
+}
+
+/* ---- ASCII Banner ---- */
+.ascii-banner {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 11;
+    -fx-text-fill: #ff8906;
+    -fx-font-weight: bold;
+    -fx-padding: 10;
+}
+
+/* ---- Typography ---- */
+.title-label {
+    -fx-font-size: 22;
+    -fx-font-weight: bold;
+    -fx-text-fill: #fffffe;
+    -fx-effect: dropshadow(three-pass-box, #ff8906, 10, 0.4, 0, 0);
+}
+
+.subtitle-label {
+    -fx-font-size: 15;
+    -fx-font-weight: bold;
+    -fx-text-fill: #7f5af0;
+    -fx-effect: dropshadow(three-pass-box, #7f5af0, 6, 0.3, 0, 0);
+}
+
+.credits-label {
+    -fx-font-size: 12;
+    -fx-text-fill: #555770;
+}
+
+.section-title {
+    -fx-font-size: 14;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e53170;
+    -fx-effect: dropshadow(three-pass-box, rgba(229,49,112,0.3), 4, 0, 0, 0);
+    -fx-padding: 6 0 2 0;
+}
+
+.decor-label {
+    -fx-font-size: 18;
+    -fx-text-fill: #555770;
+    -fx-padding: 10 0 0 0;
+}
+
+/* ---- Menu Screen Buttons ---- */
+.menu-button {
+    -fx-background-color: #1a1a2e;
+    -fx-text-fill: #fffffe;
+    -fx-font-size: 18;
+    -fx-font-weight: bold;
+    -fx-padding: 14 40;
+    -fx-background-radius: 0;
+    -fx-border-color: #ff8906;
+    -fx-border-width: 3;
+    -fx-border-radius: 0;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(255,137,6,0.4), 10, 0, 3, 3);
+}
+
+.menu-button:hover {
+    -fx-background-color: #ff8906;
+    -fx-text-fill: #0f0e17;
+    -fx-effect: dropshadow(three-pass-box, #ff8906, 25, 0.5, 0, 0);
+}
+
+.menu-button:pressed {
+    -fx-background-color: #e53170;
+    -fx-text-fill: #fffffe;
+    -fx-border-color: #e53170;
+    -fx-effect: dropshadow(three-pass-box, #e53170, 20, 0.5, 0, 0);
+}
+
+/* ---- Control Buttons (Play/Pause/Stop) ---- */
+.control-button {
+    -fx-background-color: #1a1a2e;
+    -fx-text-fill: #fffffe;
+    -fx-font-size: 13;
+    -fx-font-weight: bold;
+    -fx-padding: 8 16;
+    -fx-background-radius: 0;
+    -fx-border-color: #7f5af0;
+    -fx-border-width: 2;
+    -fx-border-radius: 0;
+    -fx-cursor: hand;
+}
+
+.control-button:hover {
+    -fx-background-color: #7f5af0;
+    -fx-text-fill: #0f0e17;
+    -fx-effect: dropshadow(three-pass-box, #7f5af0, 16, 0.4, 0, 0);
+}
+
+.control-button:pressed {
+    -fx-background-color: #e53170;
+    -fx-text-fill: #fffffe;
+    -fx-border-color: #e53170;
+}
+
+/* ---- Back Button ---- */
+.back-button {
+    -fx-background-color: #242838;
+    -fx-text-fill: #ff8906;
+    -fx-font-size: 13;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 6 12;
+    -fx-border-color: #ff8906;
+    -fx-border-width: 2;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+}
+
+.back-button:hover {
+    -fx-background-color: #ff8906;
+    -fx-text-fill: #0f0e17;
+    -fx-effect: dropshadow(three-pass-box, #ff8906, 12, 0.4, 0, 0);
+}
+
+/* ---- Status text classes ---- */
+.status-active {
+    -fx-text-fill: #2cb67d;
+    -fx-font-weight: bold;
+}
+
+.status-blocked {
+    -fx-text-fill: #e53170;
+    -fx-font-weight: bold;
+}
+
+.status-idle {
+    -fx-text-fill: #555770;
+}
+
+/* ---- Emoji size classes ---- */
+.emoji-huge {
+    -fx-font-size: 48;
+}
+
+.emoji-medium {
+    -fx-font-size: 30;
+}
+
+.emoji-small {
+    -fx-font-size: 18;
+}
+
+.emoji-gear {
+    -fx-font-size: 28;
+}
+
+.emoji-philosopher {
+    -fx-font-size: 32;
+}
+
+.emoji-table-center {
+    -fx-font-size: 36;
+}
+
+.emoji-plate {
+    -fx-font-size: 20;
+}
+
+.emoji-fork {
+    -fx-font-size: 18;
+}
+
+/* ---- Legend ---- */
+.legend-emoji {
+    -fx-font-size: 14;
+}
+
+.legend-text {
+    -fx-font-size: 12;
+    -fx-font-weight: bold;
+}
+
+/* ---- Small label ---- */
+.small-label {
+    -fx-font-size: 11;
+    -fx-text-fill: #555770;
+}
+
+/* ---- Scroll Pane ---- */
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+/* ---- Slider ---- */
+.slider .track {
+    -fx-background-color: #242838;
+    -fx-background-radius: 0;
+    -fx-border-color: #393b52;
+    -fx-border-width: 1;
+    -fx-pref-height: 6;
+}
+
+.slider .thumb {
+    -fx-background-color: #7f5af0;
+    -fx-background-radius: 0;
+    -fx-border-color: #fffffe;
+    -fx-border-width: 1;
+    -fx-pref-width: 14;
+    -fx-pref-height: 14;
+    -fx-effect: dropshadow(three-pass-box, #7f5af0, 8, 0.4, 0, 0);
+}
+
+/* ---- Spinner ---- */
+.spinner {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #7f5af0;
+    -fx-border-width: 2;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+}
+
+.spinner .text-field {
+    -fx-background-color: #0f0e17;
+    -fx-text-fill: #fffffe;
+    -fx-font-family: "Consolas", monospace;
+    -fx-background-radius: 0;
+}
+
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+    -fx-background-color: #242838;
+    -fx-border-color: #7f5af0;
+    -fx-background-radius: 0;
+}
+
+.spinner .increment-arrow-button .increment-arrow,
+.spinner .decrement-arrow-button .decrement-arrow {
+    -fx-background-color: #7f5af0;
+}

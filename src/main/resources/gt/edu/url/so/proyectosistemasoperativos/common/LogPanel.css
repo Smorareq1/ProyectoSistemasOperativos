@@ -1,0 +1,78 @@
+/* ============================================================
+   LogPanel.css — Terminal-Style Log Panel
+   ============================================================ */
+
+/* ---- Log Container (VBox) ---- */
+.log-panel-container {
+    -fx-background-color: #0a0a12;
+    -fx-border-color: #2cb67d;
+    -fx-border-width: 2;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 6;
+    -fx-effect: dropshadow(three-pass-box, rgba(44,182,125,0.15), 8, 0, 0, 0);
+}
+
+/* ---- Title ---- */
+.log-title {
+    -fx-font-size: 12;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2cb67d;
+    -fx-effect: dropshadow(three-pass-box, #2cb67d, 4, 0.3, 0, 0);
+}
+
+/* ---- ListView ---- */
+.log-panel {
+    -fx-background-color: #050510;
+    -fx-border-color: #1a1a2e;
+    -fx-border-width: 1;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+}
+
+.log-panel .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #72dba8;
+    -fx-font-size: 11;
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-padding: 1 8;
+}
+
+.log-panel .list-cell:odd {
+    -fx-background-color: rgba(44, 182, 125, 0.04);
+}
+
+.log-panel .list-cell:selected {
+    -fx-background-color: rgba(44, 182, 125, 0.15);
+    -fx-text-fill: #fffffe;
+}
+
+.log-panel .list-cell:empty {
+    -fx-background-color: transparent;
+}
+
+/* Scrollbar */
+.log-panel .scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.log-panel .scroll-bar .thumb {
+    -fx-background-color: #2cb67d;
+    -fx-background-radius: 0;
+}
+
+.log-panel .scroll-bar .track {
+    -fx-background-color: #0a0a12;
+    -fx-background-radius: 0;
+}
+
+.log-panel .scroll-bar .increment-button,
+.log-panel .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.log-panel .scroll-bar .increment-arrow,
+.log-panel .scroll-bar .decrement-arrow {
+    -fx-background-color: #393b52;
+}
