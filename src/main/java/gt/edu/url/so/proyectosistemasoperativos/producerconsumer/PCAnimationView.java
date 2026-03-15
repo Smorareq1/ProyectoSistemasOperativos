@@ -290,7 +290,7 @@ public class PCAnimationView extends BorderPane {
             // Alternate between mining up (1) and down (2)
             mFrame = (animFrame % 4 < 2) ? 1 : 2;
         }
-        canvas.drawMiner(20, 58, mFrame);
+        canvas.drawMiner(18, 50, mFrame);
 
         // Sparks when mining
         if (minerState == 1) {
@@ -352,7 +352,7 @@ public class PCAnimationView extends BorderPane {
             {ORANGE, DK_ORANGE, GOLD}
         };
         for (int i = 0; i < 3; i++) {
-            int rx = 200, ry = 37 + i * 22;
+            int rx = 198, ry = 35 + i * 25;
             canvas.drawRobot(rx, ry, robotStates[i], robotColors[i][0], robotColors[i][1], robotColors[i][2]);
 
             // Robot label
