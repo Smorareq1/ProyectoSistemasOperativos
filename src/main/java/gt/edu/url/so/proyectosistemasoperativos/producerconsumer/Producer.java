@@ -2,9 +2,7 @@ package gt.edu.url.so.proyectosistemasoperativos.producerconsumer;
 
 import gt.edu.url.so.proyectosistemasoperativos.common.GameLogger;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.function.Consumer;
 
 public class Producer extends Thread {
@@ -15,21 +13,38 @@ public class Producer extends Thread {
     private volatile boolean running = true;
     private volatile boolean paused = false;
     private int delayMs = 500;
+    private final File archivoExterno;
 
     public Producer(SharedBuffer buffer, GameLogger log,
                     Consumer<String> estadoCallback, Consumer<Integer> numeroCallback) {
+        this(buffer, log, estadoCallback, numeroCallback, null);
+    }
+
+    public Producer(SharedBuffer buffer, GameLogger log,
+                    Consumer<String> estadoCallback, Consumer<Integer> numeroCallback,
+                    File archivoExterno) {
         super("Productor");
         setDaemon(true);
         this.buffer = buffer;
         this.log = log;
         this.estadoCallback = estadoCallback;
         this.numeroCallback = numeroCallback;
+        this.archivoExterno = archivoExterno;
+    }
+
+    private BufferedReader abrirArchivo() throws IOException {
+        if (archivoExterno != null) {
+            return new BufferedReader(new FileReader(archivoExterno));
+        }
+        InputStream is = getClass().getResourceAsStream(
+                "/gt/edu/url/so/proyectosistemasoperativos/producerconsumer/data/numeros.txt");
+        if (is == null) throw new IOException("No se encontro el archivo de numeros por defecto");
+        return new BufferedReader(new InputStreamReader(is));
     }
 
     @Override
     public void run() {
-        try (InputStream is = getClass().getResourceAsStream("/gt/edu/url/so/proyectosistemasoperativos/producerconsumer/data/numeros.txt");
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+        try (BufferedReader reader = abrirArchivo()) {
 
             String line;
             while ((line = reader.readLine()) != null && running) {

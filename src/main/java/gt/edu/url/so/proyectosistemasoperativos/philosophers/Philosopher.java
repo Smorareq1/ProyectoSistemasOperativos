@@ -22,13 +22,17 @@ public class Philosopher extends Thread {
         this.config = config;
     }
 
+    private void esperarSiPausado() throws InterruptedException {
+        while (paused && running) {
+            Thread.sleep(100);
+        }
+    }
+
     @Override
     public void run() {
         try {
             while (running) {
-                while (paused && running) {
-                    Thread.sleep(100);
-                }
+                esperarSiPausado();
                 if (!running) break;
 
                 // Pensar
@@ -37,12 +41,14 @@ public class Philosopher extends Thread {
                         random.nextInt(config.getTiempoMaxPensar() - config.getTiempoMinPensar() + 1);
                 Thread.sleep(thinkTime);
 
+                esperarSiPausado();
                 if (!running) break;
 
                 // Tomar tenedores
                 log.log("F" + id + " quiere comer — intentando tomar tenedores");
                 controller.tomarTenedores(id);
 
+                esperarSiPausado();
                 if (!running) break;
 
                 // Comer
@@ -52,6 +58,9 @@ public class Philosopher extends Thread {
                 int eatTime = config.getTiempoMinComer() +
                         random.nextInt(config.getTiempoMaxComer() - config.getTiempoMinComer() + 1);
                 Thread.sleep(eatTime);
+
+                esperarSiPausado();
+                if (!running) break;
 
                 // Soltar tenedores
                 controller.soltarTenedores(id);

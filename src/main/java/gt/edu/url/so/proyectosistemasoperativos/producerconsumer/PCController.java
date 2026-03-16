@@ -2,11 +2,13 @@ package gt.edu.url.so.proyectosistemasoperativos.producerconsumer;
 
 import gt.edu.url.so.proyectosistemasoperativos.common.GameLogger;
 
+import java.io.File;
 import java.util.function.BiConsumer;
 
 public class PCController {
     private static final int BUFFER_CAPACITY = 12;
 
+    private File archivoPersonalizado;
     private SharedBuffer buffer;
     private Producer producer;
     private gt.edu.url.so.proyectosistemasoperativos.producerconsumer.Consumer consumerPar;
@@ -58,7 +60,7 @@ public class PCController {
 
         buffer = new SharedBuffer(BUFFER_CAPACITY);
 
-        producer = new Producer(buffer, log, producerEstadoCallback, producerNumeroCallback);
+        producer = new Producer(buffer, log, producerEstadoCallback, producerNumeroCallback, archivoPersonalizado);
         consumerPar = new gt.edu.url.so.proyectosistemasoperativos.producerconsumer.Consumer(
                 "C1-Pares", buffer, TipoNumero.PAR, log, consumerParEstadoCallback, sumaParCallback);
         consumerImpar = new gt.edu.url.so.proyectosistemasoperativos.producerconsumer.Consumer(
@@ -124,6 +126,8 @@ public class PCController {
         if (consumerPrimo != null) consumerPrimo.setDelay(ms);
     }
 
+    public void setArchivoPersonalizado(File archivo) { this.archivoPersonalizado = archivo; }
+    public File getArchivoPersonalizado() { return archivoPersonalizado; }
     public SharedBuffer getBuffer() { return buffer; }
     public boolean isRunning() { return running; }
 }

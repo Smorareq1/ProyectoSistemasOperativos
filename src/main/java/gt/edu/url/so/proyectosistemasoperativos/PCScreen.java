@@ -21,6 +21,9 @@ import gt.edu.url.so.proyectosistemasoperativos.common.PixelArtRenderer;
 import gt.edu.url.so.proyectosistemasoperativos.common.PostProcessingPipeline;
 import gt.edu.url.so.proyectosistemasoperativos.producerconsumer.*;
 
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.io.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -54,6 +57,7 @@ public class PCScreen extends ScreenAdapter {
     private BitmapFont smallFont;
     private BitmapFont logFont;
     private Skin skin;
+    private Label archivoLabel;
     private Label minerStatusLabel;
     private Label minerNumberLabel;
     private Label bufferCountLabel;
@@ -263,6 +267,14 @@ public class PCScreen extends ScreenAdapter {
         TextButton playBtn = new TextButton("  START  ", skin);
         TextButton pauseBtn = new TextButton("  PAUSE  ", skin);
         TextButton stopBtn = new TextButton("  STOP  ", skin);
+        TextButton importBtn = new TextButton(" IMPORT ", skin);
+
+        importBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
+                importarArchivo();
+            }
+        });
 
         // Speed controls
         TextButton speedDown = new TextButton(" - ", skin);
@@ -311,6 +323,7 @@ public class PCScreen extends ScreenAdapter {
         topBar.add(speedDown).pad(4);
         topBar.add(speedLabel).pad(4);
         topBar.add(speedUp).pad(4);
+        topBar.add(importBtn).pad(6);
         topBar.add(playBtn).pad(6);
         topBar.add(pauseBtn).pad(6);
         topBar.add(stopBtn).pad(6).padRight(10);
@@ -350,6 +363,14 @@ public class PCScreen extends ScreenAdapter {
         bufRow.add(new Label("Buffer: ", skin)).left();
         bufRow.add(bufferCountLabel).left();
         sidebar.add(bufRow).left().fillX().row();
+
+        Table fileRow = new Table();
+        fileRow.left();
+        archivoLabel = new Label("numeros.txt (default)", skin);
+        archivoLabel.setColor(new Color(0.75f, 0.66f, 0.47f, 1f));
+        fileRow.add(new Label("Archivo: ", skin)).left();
+        fileRow.add(archivoLabel).left();
+        sidebar.add(fileRow).left().fillX().row();
 
         sidebar.add().height(4).row();
         addSeparator(sidebar);
@@ -684,6 +705,94 @@ public class PCScreen extends ScreenAdapter {
             renderer.drawOreBlock(bx, by, color);
             renderer.drawText(String.valueOf(num), bx + 1.0, by - 1.0, WHITE, 5);
         }
+    }
+
+    // ═══════════════════════════════════════
+    //  FILE IMPORT
+    // ═══════════════════════════════════════
+    private void importarArchivo() {
+        if (controller.isRunning()) {
+            mostrarError("Detene la simulacion antes de importar un archivo.");
+            return;
+        }
+
+        // Run Swing FileChooser on a separate thread to avoid blocking LibGDX
+        new Thread(() -> {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ignored) {}
+
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Importar archivo de numeros");
+            chooser.setFileFilter(new FileNameExtensionFilter("Archivos de texto (*.txt)", "txt"));
+            int result = chooser.showOpenDialog(null);
+            if (result != JFileChooser.APPROVE_OPTION) return;
+
+            File archivo = chooser.getSelectedFile();
+            String error = validarArchivo(archivo);
+            if (error != null) {
+                mostrarError(error);
+                return;
+            }
+
+            Gdx.app.postRunnable(() -> {
+                controller.setArchivoPersonalizado(archivo);
+                archivoLabel.setText(archivo.getName());
+                logger.log("Archivo importado: " + archivo.getName());
+            });
+        }, "FileChooser").start();
+    }
+
+    private String validarArchivo(File archivo) {
+        if (!archivo.exists() || !archivo.canRead()) {
+            return "El archivo no existe o no se puede leer.";
+        }
+        if (!archivo.getName().toLowerCase().endsWith(".txt")) {
+            return "El archivo debe ser de tipo .txt";
+        }
+        if (archivo.length() == 0) {
+            return "El archivo esta vacio.";
+        }
+
+        List<String> errores = new ArrayList<>();
+        int lineaNum = 0;
+        int cantidadNumeros = 0;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(archivo))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                lineaNum++;
+                linea = linea.trim();
+                if (linea.isEmpty()) continue;
+
+                try {
+                    Integer.parseInt(linea);
+                    cantidadNumeros++;
+                } catch (NumberFormatException e) {
+                    errores.add("Linea " + lineaNum + ": \"" + linea + "\" no es un numero entero valido.");
+                    if (errores.size() >= 5) {
+                        errores.add("... y posiblemente mas errores.");
+                        break;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            return "Error al leer el archivo: " + e.getMessage();
+        }
+
+        if (!errores.isEmpty()) {
+            return "El archivo contiene errores de formato:\n" + String.join("\n", errores);
+        }
+        if (cantidadNumeros == 0) {
+            return "El archivo no contiene ningun numero.";
+        }
+        return null;
+    }
+
+    private void mostrarError(String mensaje) {
+        SwingUtilities.invokeLater(() ->
+            JOptionPane.showMessageDialog(null, mensaje, "Error", JOptionPane.ERROR_MESSAGE)
+        );
     }
 
     private void cleanup() {
