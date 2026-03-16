@@ -1,6 +1,6 @@
 package gt.edu.url.so.proyectosistemasoperativos.producerconsumer;
 
-import gt.edu.url.so.proyectosistemasoperativos.common.LogPanel;
+import gt.edu.url.so.proyectosistemasoperativos.common.GameLogger;
 
 import java.io.File;
 import java.util.function.BiConsumer;
@@ -14,7 +14,7 @@ public class PCController {
     private gt.edu.url.so.proyectosistemasoperativos.producerconsumer.Consumer consumerPar;
     private gt.edu.url.so.proyectosistemasoperativos.producerconsumer.Consumer consumerImpar;
     private gt.edu.url.so.proyectosistemasoperativos.producerconsumer.Consumer consumerPrimo;
-    private LogPanel log;
+    private GameLogger log;
     private boolean running = false;
 
     private java.util.function.Consumer<String> producerEstadoCallback;
@@ -26,7 +26,7 @@ public class PCController {
     private BiConsumer<Integer, Integer> sumaImparCallback;
     private BiConsumer<Integer, Integer> sumaPrimoCallback;
 
-    public PCController(LogPanel log) {
+    public PCController(GameLogger log) {
         this.log = log;
     }
 

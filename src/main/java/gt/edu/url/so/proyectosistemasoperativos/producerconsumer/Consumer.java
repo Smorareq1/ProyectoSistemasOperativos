@@ -1,13 +1,13 @@
 package gt.edu.url.so.proyectosistemasoperativos.producerconsumer;
 
-import gt.edu.url.so.proyectosistemasoperativos.common.LogPanel;
+import gt.edu.url.so.proyectosistemasoperativos.common.GameLogger;
 
 import java.util.function.BiConsumer;
 
 public class Consumer extends Thread {
     private final SharedBuffer buffer;
     private final TipoNumero tipo;
-    private final LogPanel log;
+    private final GameLogger log;
     private final java.util.function.Consumer<String> estadoCallback;
     private final BiConsumer<Integer, Integer> sumaCallback;
     private volatile boolean running = true;
@@ -16,7 +16,7 @@ public class Consumer extends Thread {
     private int suma = 0;
     private int delayMs = 500;
 
-    public Consumer(String name, SharedBuffer buffer, TipoNumero tipo, LogPanel log,
+    public Consumer(String name, SharedBuffer buffer, TipoNumero tipo, GameLogger log,
                     java.util.function.Consumer<String> estadoCallback,
                     BiConsumer<Integer, Integer> sumaCallback) {
         super(name);

@@ -1,19 +1,19 @@
 package gt.edu.url.so.proyectosistemasoperativos.philosophers;
 
-import gt.edu.url.so.proyectosistemasoperativos.common.LogPanel;
+import gt.edu.url.so.proyectosistemasoperativos.common.GameLogger;
 
 import java.util.Random;
 
 public class Philosopher extends Thread {
     private final int id;
     private final DPController controller;
-    private final LogPanel log;
+    private final GameLogger log;
     private final PhilosopherConfig config;
     private final Random random = new Random();
     private volatile boolean running = true;
     private volatile boolean paused = false;
 
-    public Philosopher(int id, DPController controller, LogPanel log, PhilosopherConfig config) {
+    public Philosopher(int id, DPController controller, GameLogger log, PhilosopherConfig config) {
         super("Filosofo-" + id);
         setDaemon(true);
         this.id = id;
