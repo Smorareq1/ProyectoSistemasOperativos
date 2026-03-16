@@ -9,8 +9,11 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
+import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 
 import static gt.edu.url.so.proyectosistemasoperativos.common.PixelGameCanvas.*;
@@ -45,6 +48,7 @@ public class PCAnimationView extends BorderPane {
     private Timeline updateTimeline;
     private AnimationTimer gameLoop;
     private boolean paused = false;
+    private final Label archivoLabel = new Label("numeros.txt (default)");
 
     // ── Canvas pixel grid (240 x 128 at scale 3 = 720x384 screen) ──
     private static final int CW = 720, CH = 384;
@@ -121,6 +125,13 @@ public class PCAnimationView extends BorderPane {
         pauseBtn.getStyleClass().add("control-button");
         stopBtn.getStyleClass().add("control-button");
 
+        Button importBtn = new Button("\uD83D\uDCC2 IMPORT");
+        importBtn.getStyleClass().add("control-button");
+        archivoLabel.getStyleClass().add("small-label");
+        archivoLabel.setStyle("-fx-font-size: 9; -fx-text-fill: #c0a878;");
+
+        importBtn.setOnAction(e -> importarArchivo());
+
         Label speedLabel = new Label("\u26A1 SPD:");
         speedLabel.getStyleClass().add("speed-label");
         Slider speedSlider = new Slider(50, 2000, 500);
@@ -128,7 +139,10 @@ public class PCAnimationView extends BorderPane {
         speedSlider.setPrefWidth(150);
         speedSlider.valueProperty().addListener((obs, o, n) -> controller.setDelay(n.intValue()));
 
-        HBox controls = new HBox(10, playBtn, pauseBtn, stopBtn, speedLabel, speedSlider);
+        VBox importBox = new VBox(2, importBtn, archivoLabel);
+        importBox.setAlignment(Pos.CENTER);
+
+        HBox controls = new HBox(10, playBtn, pauseBtn, stopBtn, importBox, speedLabel, speedSlider);
         controls.setAlignment(Pos.CENTER);
         controls.getStyleClass().add("pc-controls");
 
@@ -230,6 +244,88 @@ public class PCAnimationView extends BorderPane {
                 new Separator(), robTitle, robotsInfo
         );
         return panel;
+    }
+
+    // ═══════════════════════════════════════
+    //  FILE IMPORT
+    // ═══════════════════════════════════════
+    private void importarArchivo() {
+        if (controller.isRunning()) {
+            mostrarError("Detene la simulacion antes de importar un archivo.");
+            return;
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Importar archivo de numeros");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Archivos de texto (*.txt)", "*.txt")
+        );
+        File archivo = chooser.showOpenDialog(getScene().getWindow());
+        if (archivo == null) return;
+
+        String error = validarArchivo(archivo);
+        if (error != null) {
+            mostrarError(error);
+            return;
+        }
+
+        controller.setArchivoPersonalizado(archivo);
+        archivoLabel.setText(archivo.getName());
+        logPanel.log("Archivo importado: " + archivo.getName());
+    }
+
+    private String validarArchivo(File archivo) {
+        if (!archivo.exists() || !archivo.canRead()) {
+            return "El archivo no existe o no se puede leer.";
+        }
+        if (!archivo.getName().toLowerCase().endsWith(".txt")) {
+            return "El archivo debe ser de tipo .txt";
+        }
+        if (archivo.length() == 0) {
+            return "El archivo esta vacio.";
+        }
+
+        List<String> errores = new ArrayList<>();
+        int lineaNum = 0;
+        int cantidadNumeros = 0;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(archivo))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                lineaNum++;
+                linea = linea.trim();
+                if (linea.isEmpty()) continue;
+
+                try {
+                    Integer.parseInt(linea);
+                    cantidadNumeros++;
+                } catch (NumberFormatException e) {
+                    errores.add("Linea " + lineaNum + ": \"" + linea + "\" no es un numero entero valido.");
+                    if (errores.size() >= 5) {
+                        errores.add("... y posiblemente mas errores.");
+                        break;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            return "Error al leer el archivo: " + e.getMessage();
+        }
+
+        if (!errores.isEmpty()) {
+            return "El archivo contiene errores de formato:\n" + String.join("\n", errores);
+        }
+        if (cantidadNumeros == 0) {
+            return "El archivo no contiene ningun numero.";
+        }
+        return null;
+    }
+
+    private void mostrarError(String mensaje) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(null);
+        alert.setContentText(mensaje);
+        alert.showAndWait();
     }
 
     // ═══════════════════════════════════════
