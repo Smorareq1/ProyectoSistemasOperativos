@@ -15,8 +15,11 @@ ext {
     junitVersion = '5.10.0'
 }
 
-sourceCompatibility = '21'
-targetCompatibility = '21'
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
