@@ -189,7 +189,7 @@ public class MenuScreen extends ScreenAdapter {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 AudioManager.getInstance().playButtonSound();
-                game.showProducerConsumer();
+                game.showLoading(LoadingScreen.Target.PRODUCER_CONSUMER);
             }
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
@@ -208,7 +208,7 @@ public class MenuScreen extends ScreenAdapter {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 AudioManager.getInstance().playButtonSound();
-                game.showDiningPhilosophers();
+                game.showLoading(LoadingScreen.Target.DINING_PHILOSOPHERS);
             }
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {

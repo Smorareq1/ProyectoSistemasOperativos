@@ -22,6 +22,10 @@ public class SOGame extends Game {
         setScreen(new PCScreen(this));
     }
 
+    public void showLoading(LoadingScreen.Target target) {
+        setScreen(new LoadingScreen(this, target));
+    }
+
     @Override
     public void dispose() {
         super.dispose();
