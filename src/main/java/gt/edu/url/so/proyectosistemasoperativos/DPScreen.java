@@ -77,6 +77,9 @@ public class DPScreen extends ScreenAdapter {
     private final List<String> logMessages = new ArrayList<>();
     private Label logLabel;
     private ScrollPane logScrollPane;
+    private Table leftSidebar;
+    private Table rightSidebar;
+    private Table bottomBar;
     private static final int MAX_LOG = 100;
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
@@ -137,12 +140,19 @@ public class DPScreen extends ScreenAdapter {
         p.borderColor = new Color(0.1f, 0.05f, 0.0f, 1f);
         smallFont = gen.generateFont(p);
 
-        // Sidebar font (smaller for state info)
-        p.size = 11;
+        // Sidebar font (pixel-art style, larger to fill boxes)
+        p.size = 15;
         p.color = new Color(0.9f, 0.88f, 0.78f, 1f);
         p.borderWidth = 1f;
         p.borderColor = new Color(0.08f, 0.04f, 0.0f, 1f);
         sidebarFont = gen.generateFont(p);
+
+        // Log font (pixel-art style, slightly smaller for dense text)
+        p.size = 12;
+        p.color = new Color(0.85f, 0.82f, 0.72f, 1f);
+        p.borderWidth = 0.8f;
+        p.borderColor = new Color(0.06f, 0.03f, 0.0f, 1f);
+        logFont = gen.generateFont(p);
 
         gen.dispose();
 
@@ -201,11 +211,8 @@ public class DPScreen extends ScreenAdapter {
         Label.LabelStyle sidebarStyle = new Label.LabelStyle(sidebarFont, new Color(0.9f, 0.88f, 0.78f, 1f));
         skin.add("sidebar", sidebarStyle);
 
-        // Log font: default LibGDX font, compact and readable
-        BitmapFont defaultFont = new BitmapFont();
-        defaultFont.setColor(new Color(0.85f, 0.82f, 0.72f, 1f));
-        defaultFont.getData().setScale(1.0f);
-        Label.LabelStyle logStyle = new Label.LabelStyle(defaultFont, new Color(0.85f, 0.82f, 0.72f, 1f));
+        // Log font: pixel-art PressStart2P, compact
+        Label.LabelStyle logStyle = new Label.LabelStyle(logFont, new Color(0.85f, 0.82f, 0.72f, 1f));
         skin.add("log", logStyle);
 
         ScrollPane.ScrollPaneStyle sps = new ScrollPane.ScrollPaneStyle();
@@ -231,15 +238,9 @@ public class DPScreen extends ScreenAdapter {
     private void buildUI() {
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
+        // (Textures for button backgrounds are created inside buildSkin)
 
-        TextureRegionDrawable darkBg = skin.get("panel-bg", TextureRegionDrawable.class);
-        TextureRegionDrawable sidebarBg = skin.get("sidebar-bg", TextureRegionDrawable.class);
-
-        Table root = new Table();
-        root.setFillParent(true);
-        root.top();
-
-        // === Top bar ===
+        // === Bottom control bar (buttons + title) ===
         TextButton backBtn = new TextButton("  MENU  ", skin);
         backBtn.addListener(new ClickListener() {
             @Override
@@ -294,25 +295,28 @@ public class DPScreen extends ScreenAdapter {
             }
         });
 
-        Table topBar = new Table();
-        topBar.setBackground(darkBg);
-        topBar.add(backBtn).pad(6).padLeft(10);
-        topBar.add(title).expandX().center().pad(6);
-        topBar.add(speedDown).pad(4);
-        topBar.add(speedLabel).pad(4);
-        topBar.add(speedUp).pad(4);
-        topBar.add(playBtn).pad(6);
-        topBar.add(pauseBtn).pad(6);
-        topBar.add(stopBtn).pad(6).padRight(10);
-        root.add(topBar).fillX().colspan(2).row();
+        bottomBar = new Table();
+        // No background — pixel-art frame drawn by PixelArtRenderer
+        bottomBar.center();
+        bottomBar.add(backBtn).pad(4).padLeft(8);
+        bottomBar.add(title).expandX().center().pad(4);
+        bottomBar.add(speedDown).pad(3);
+        bottomBar.add(speedLabel).pad(3);
+        bottomBar.add(speedUp).pad(3);
+        bottomBar.add(playBtn).pad(4);
+        bottomBar.add(pauseBtn).pad(4);
+        bottomBar.add(stopBtn).pad(4).padRight(8);
 
-        // === Main area: LEFT SIDEBAR + PIXEL ART ===
-        // Left sidebar with N selector, states, log
-        Table sidebar = new Table();
-        sidebar.setBackground(sidebarBg);
-        sidebar.top().pad(8);
+        // Empty root (just an anchor for the stage)
+        Table root = new Table();
+        root.setFillParent(true);
 
-        // --- N philosopher selector ---
+        // === LEFT SIDEBAR ===
+        leftSidebar = new Table();
+        // Background removed; rendering by PixelArtRenderer
+        leftSidebar.top().pad(12);
+
+        // --- 1. N philosopher selector ---
         Table nRow = new Table();
         Label nTitle = new Label("FILOSOFOS", skin, "sidebar");
         nTitle.setColor(GOLD);
@@ -342,47 +346,101 @@ public class DPScreen extends ScreenAdapter {
             }
         });
 
-        nRow.add(nTitle).left().padRight(6);
-        nRow.add(nDown).size(28, 24).padRight(2);
-        nRow.add(nLabel).center().padLeft(4).padRight(4);
-        nRow.add(nUp).size(28, 24);
-        sidebar.add(nRow).left().fillX().row();
-        sidebar.add().height(6).row();
+        Table nControls = new Table();
+        nControls.add(nDown).size(28, 24).padRight(6);
+        nControls.add(nLabel).center().padLeft(4).padRight(10);
+        nControls.add(nUp).size(28, 24);
+        
+        nRow.add(nTitle).center().padBottom(4).row();
+        nRow.add(nControls).center();
+        leftSidebar.add(nRow).fillX().padBottom(4).row();
 
-        // --- Separator ---
-        addSeparator(sidebar);
+        addSeparator(leftSidebar);
 
-        // --- State labels container (rebuilt when N changes) ---
+        // --- 2. State labels container ---
         stateContainer = new Table();
-        stateContainer.top().left();
+        stateContainer.top().center();
         rebuildSidebarStates();
 
         ScrollPane stateScroll = new ScrollPane(stateContainer);
         stateScroll.setFadeScrollBars(true);
         stateScroll.setScrollingDisabled(true, false);
-        sidebar.add(stateScroll).expandX().fillX().height(180).row();
+        leftSidebar.add(stateScroll).expand().fill().padTop(0).row();
 
-        // --- Separator ---
-        addSeparator(sidebar);
+        // === RIGHT SIDEBAR (LOG) ===
+        rightSidebar = new Table();
+        // Background removed; rendering by PixelArtRenderer
+        rightSidebar.top().pad(18);
 
-        // --- Log header ---
         Label logTitle = new Label("LOG", skin, "sidebar");
         logTitle.setColor(GOLD);
-        sidebar.add(logTitle).left().padTop(4).padBottom(2).row();
+        rightSidebar.add(logTitle).expandX().center().padBottom(6).row();
 
-        // --- Log area: scrollable ---
         logLabel = new Label("", skin, "log");
         logLabel.setWrap(true);
         logScrollPane = new ScrollPane(logLabel, skin);
         logScrollPane.setFadeScrollBars(false);
         logScrollPane.setScrollingDisabled(true, false);
-        sidebar.add(logScrollPane).expand().fill().padTop(2).row();
-
-        // Add sidebar and pixel art area
-        root.add(sidebar).width(280).expandY().fillY();
-        root.add().expand().fill(); // pixel art area (transparent)
+        rightSidebar.add(logScrollPane).expand().fill().row();
 
         stage.addActor(root);
+        stage.addActor(leftSidebar);
+        stage.addActor(rightSidebar);
+        stage.addActor(bottomBar);
+
+        // Position sidebars and bottom bar to match pixel-art UI boxes
+        repositionUI(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    }
+
+    /**
+     * Dynamically position the left and right sidebars to match the pixel-art UI boxes.
+     * Pixel-art box coords (in pixel-art space, Y-down):
+     *   Left:  x=10, y=84, w=100, h=92
+     *   Right: x=pw-100-10=256, y=84, w=100, h=92
+     * Converting to screen coords: multiply by SCALE, flip Y.
+     */
+    // Pixel-art sidebar constants (in pixel-art coords)
+    private static final int UI_BOX_W = 70;
+    private static final int UI_BOX_H = 92;
+    private static final int UI_BOX_Y = 84;
+    private static final int UI_BOX_MARGIN = 4;
+    // Bottom bar constants (in pixel-art coords)
+    private static final int BAR_W = 220;
+    private static final int BAR_H = 22;
+    private static final int BAR_X = (366 - 220) / 2; // Centered
+    private static final int BAR_Y = 250 - 22 - 2; // bottom margin of 2px
+
+    private void repositionUI(int screenW, int screenH) {
+        float canvasW = CW;  // 1100
+        float canvasH = CH;  // 750
+        float sx = screenW / canvasW;
+        float sy = screenH / canvasH;
+
+        int pw = CW / SCALE;  // 366
+
+        // Left sidebar
+        float leftX = UI_BOX_MARGIN * SCALE * sx;
+        float leftW = UI_BOX_W * SCALE * sx;
+        float leftH = UI_BOX_H * SCALE * sy;
+        float leftY = screenH - (UI_BOX_Y + UI_BOX_H) * SCALE * sy;
+        leftSidebar.setPosition(leftX, leftY);
+        leftSidebar.setSize(leftW, leftH);
+
+        // Right sidebar
+        float rightX = (pw - UI_BOX_W - UI_BOX_MARGIN) * SCALE * sx;
+        float rightW = UI_BOX_W * SCALE * sx;
+        float rightH = UI_BOX_H * SCALE * sy;
+        float rightY = screenH - (UI_BOX_Y + UI_BOX_H) * SCALE * sy;
+        rightSidebar.setPosition(rightX, rightY);
+        rightSidebar.setSize(rightW, rightH);
+
+        // Bottom bar
+        float barX = BAR_X * SCALE * sx;
+        float barW = BAR_W * SCALE * sx;
+        float barH = BAR_H * SCALE * sy;
+        float barY = screenH - (BAR_Y + BAR_H) * SCALE * sy;
+        bottomBar.setPosition(barX, barY);
+        bottomBar.setSize(barW, barH);
     }
 
     private void addSeparator(Table parent) {
@@ -405,25 +463,25 @@ public class DPScreen extends ScreenAdapter {
             stateContainer.clear();
 
             // Philosopher header
-            Label phTitle = new Label("-- Filosofos --", skin, "sidebar");
+            Label phTitle = new Label("Filosofo", skin, "sidebar");
             phTitle.setColor(new Color(0.7f, 0.65f, 0.55f, 1f));
-            stateContainer.add(phTitle).left().colspan(2).padBottom(2).row();
-
+            
+            // Fork header
+            Label fkTitle = new Label("Tenedor", skin, "sidebar");
+            fkTitle.setColor(new Color(0.7f, 0.65f, 0.55f, 1f));
+            
+            // Layout in 2 columns, centered
+            stateContainer.add(phTitle).center().padRight(6).padBottom(4);
+            stateContainer.add(fkTitle).center().padBottom(4).row();
+            
             for (int i = 0; i < N; i++) {
                 stateLabels[i] = new Label("F" + i + ": PENSANDO", skin, "sidebar");
                 stateLabels[i].setColor(TEAL);
-                stateContainer.add(stateLabels[i]).left().padBottom(1).row();
-            }
-
-            // Fork header
-            Label fkTitle = new Label("-- Tenedores --", skin, "sidebar");
-            fkTitle.setColor(new Color(0.7f, 0.65f, 0.55f, 1f));
-            stateContainer.add(fkTitle).left().padTop(4).padBottom(2).row();
-
-            for (int i = 0; i < N; i++) {
                 forkLabels[i] = new Label("T" + i + ": libre", skin, "sidebar");
                 forkLabels[i].setColor(LT_GREEN);
-                stateContainer.add(forkLabels[i]).left().padBottom(1).row();
+                
+                stateContainer.add(stateLabels[i]).center().padRight(6).padBottom(2);
+                stateContainer.add(forkLabels[i]).center().padBottom(2).row();
             }
         }
     }
@@ -536,7 +594,7 @@ public class DPScreen extends ScreenAdapter {
         renderer.fill(signX + 1, 5, signW - 2, 16, WOOD1);
         renderer.fill(signX + 2, 6, signW - 4, 14, DK_RED);
         renderer.fill(signX + 2, 6, signW - 4, 4, RED);
-        renderer.drawText("TAVERNA", signX + 12.0, 7.0, GOLD, 8);
+        renderer.drawText("TAVERNA", signX + 26.0, 4.5, GOLD, 8);
 
         // === FIREPLACE — central warm light source ===
         renderer.drawFireplace(pw / 2 - 10, wallH - 18, animFrame);
@@ -568,6 +626,13 @@ public class DPScreen extends ScreenAdapter {
         // Light pool on the table from above
         renderer.drawLightGlow(cx, cy, tableR + 15, torchLight, 0.06f);
         renderer.drawRoundTable(cx, cy, tableR);
+
+        // === PIXEL ART UI SIDEBARS ===
+        renderer.drawUIBox(UI_BOX_MARGIN, UI_BOX_Y, UI_BOX_W, UI_BOX_H);
+        renderer.drawUIBox(pw - UI_BOX_W - UI_BOX_MARGIN, UI_BOX_Y, UI_BOX_W, UI_BOX_H);
+
+        // === PIXEL ART BOTTOM BAR ===
+        renderer.drawUIBox(BAR_X, BAR_Y, BAR_W, BAR_H);
 
         // === PHILOSOPHERS ===
         int N = config.getNumFilosofos();
@@ -786,6 +851,7 @@ public class DPScreen extends ScreenAdapter {
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
+        repositionUI(width, height);
     }
 
     @Override

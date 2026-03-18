@@ -330,16 +330,17 @@ public class PCScreen extends ScreenAdapter {
         topBar.add(stopBtn).pad(6).padRight(10);
         root.add(topBar).fillX().colspan(2).row();
 
-        // === Main area: LEFT SIDEBAR + PIXEL ART ===
-        Table sidebar = new Table();
-        sidebar.setBackground(sidebarBg);
-        sidebar.top().pad(8);
-
-        // --- MINER section ---
+        // === Main area: PIXEL ART + BOTTOM PANEL ===
+        Table bottomPanel = new Table();
+        bottomPanel.setBackground(sidebarBg);
+        bottomPanel.top().pad(15);
+        
+        // --- 1. MINER section ---
+        Table minerCol = new Table();
+        minerCol.top().left();
         Label minerTitle = new Label("PRODUCTOR", skin);
         minerTitle.setColor(GOLD);
-        sidebar.add(minerTitle).left().row();
-        sidebar.add().height(4).row();
+        minerCol.add(minerTitle).left().padBottom(8).row();
 
         Table minerRow = new Table();
         minerRow.left();
@@ -347,7 +348,7 @@ public class PCScreen extends ScreenAdapter {
         minerStatusLabel.setColor(Color.WHITE);
         minerRow.add(new Label("Estado: ", skin)).left();
         minerRow.add(minerStatusLabel).left().row();
-        sidebar.add(minerRow).left().fillX().row();
+        minerCol.add(minerRow).left().fillX().row();
 
         Table numRow = new Table();
         numRow.left();
@@ -355,7 +356,7 @@ public class PCScreen extends ScreenAdapter {
         minerNumberLabel.setColor(Color.WHITE);
         numRow.add(new Label("Ultimo: ", skin)).left();
         numRow.add(minerNumberLabel).left();
-        sidebar.add(numRow).left().fillX().row();
+        minerCol.add(numRow).left().fillX().row();
 
         Table bufRow = new Table();
         bufRow.left();
@@ -363,7 +364,7 @@ public class PCScreen extends ScreenAdapter {
         bufferCountLabel.setColor(Color.WHITE);
         bufRow.add(new Label("Buffer: ", skin)).left();
         bufRow.add(bufferCountLabel).left();
-        sidebar.add(bufRow).left().fillX().row();
+        minerCol.add(bufRow).left().fillX().row();
 
         Table fileRow = new Table();
         fileRow.left();
@@ -371,16 +372,16 @@ public class PCScreen extends ScreenAdapter {
         archivoLabel.setColor(new Color(0.75f, 0.66f, 0.47f, 1f));
         fileRow.add(new Label("Archivo: ", skin)).left();
         fileRow.add(archivoLabel).left();
-        sidebar.add(fileRow).left().fillX().row();
+        minerCol.add(fileRow).left().fillX().row();
 
-        sidebar.add().height(4).row();
-        addSeparator(sidebar);
+        bottomPanel.add(minerCol).width(300).padRight(40).top();
 
-        // --- CONSUMERS section ---
+        // --- 2. CONSUMERS section ---
+        Table consCol = new Table();
+        consCol.top().left();
         Label consTitle = new Label("CONSUMIDORES", skin);
         consTitle.setColor(GOLD);
-        sidebar.add(consTitle).left().row();
-        sidebar.add().height(4).row();
+        consCol.add(consTitle).left().padBottom(8).row();
 
         String[] names = {"PAR", "IMPAR", "PRIMO"};
         Color[] nameColors = {new Color(0.4f, 0.8f, 0.9f, 1f), new Color(0.5f, 0.9f, 0.4f, 1f), new Color(1f, 0.8f, 0.3f, 1f)};
@@ -397,41 +398,32 @@ public class PCScreen extends ScreenAdapter {
             cRow.add(nameLabel).left().width(90);
             cRow.add(robotScoreLabels[i]).left().width(60);
             cRow.add(robotStatusLabels[i]).left();
-            sidebar.add(cRow).left().fillX().row();
-            sidebar.add().height(2).row();
+            consCol.add(cRow).left().fillX().padBottom(4).row();
         }
 
-        sidebar.add().height(4).row();
-        addSeparator(sidebar);
+        bottomPanel.add(consCol).width(300).padRight(40).top();
 
-        // --- LOG section ---
+        // --- 3. LOG section ---
+        Table logCol = new Table();
+        logCol.top().left();
         Label logTitle = new Label("LOG", skin);
         logTitle.setColor(GOLD);
-        sidebar.add(logTitle).left().padTop(2).padBottom(2).row();
+        logCol.add(logTitle).left().padBottom(8).row();
 
         logLabel = new Label("", skin, "log");
         logLabel.setWrap(true);
         logScrollPane = new ScrollPane(logLabel, skin);
         logScrollPane.setFadeScrollBars(false);
         logScrollPane.setScrollingDisabled(true, false);
-        sidebar.add(logScrollPane).expand().fill().padTop(2).row();
+        logCol.add(logScrollPane).expand().fill().padTop(2).row();
 
-        // Add sidebar and pixel art area
-        root.add(sidebar).width(300).expandY().fillY();
-        root.add().expand().fill(); // pixel art area (transparent)
+        bottomPanel.add(logCol).expandX().fill().top();
+
+        // Add pixel art area and bottom panel
+        root.add().expand().fill().row(); // pixel art area (transparent)
+        root.add(bottomPanel).expandX().fillX().height(160);
 
         stage.addActor(root);
-    }
-
-    private void addSeparator(Table parent) {
-        Pixmap linePm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        linePm.setColor(new Color(0.35f, 0.28f, 0.15f, 0.6f));
-        linePm.fill();
-        Texture lineTex = new Texture(linePm);
-        linePm.dispose();
-        Table sep = new Table();
-        sep.setBackground(new TextureRegionDrawable(new TextureRegion(lineTex)));
-        parent.add(sep).fillX().height(1).padTop(4).padBottom(4).row();
     }
 
     private static final float[] SPEED_OPTIONS = {0.25f, 0.5f, 1f, 2f, 4f};

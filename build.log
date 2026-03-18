@@ -1,0 +1,54 @@
+Initialized native services in: C:\Users\Chris\.gradle\native
+Initialized jansi services in: C:\Users\Chris\.gradle\native
+The client will now receive all logging from the daemon (pid: 19844). The daemon log file: C:\Users\Chris\.gradle\daemon\8.14.1\daemon-19844.out.log
+Starting 5th build in daemon [uptime: 2 mins 7.064 secs, performance: 96%, GC rate: 1.00/s, heap usage: 5% of 341.5 MiB, non-heap usage: 15% of 384 MiB]
+Using 16 worker leases.
+Now considering [C:\Users\Chris\Antigravity\ProyectoSistemasOperativos] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Settings evaluated using settings file 'C:\Users\Chris\Antigravity\ProyectoSistemasOperativos\settings.gradle'.
+Projects loaded. Root project using build file 'C:\Users\Chris\Antigravity\ProyectoSistemasOperativos\build.gradle'.
+Included projects: [root project 'ProyectoSistemasOperativos']
+
+> Configure project :
+Evaluating root project 'ProyectoSistemasOperativos' using build file 'C:\Users\Chris\Antigravity\ProyectoSistemasOperativos\build.gradle'.
+Resolved plugin [id: 'java']
+Resolved plugin [id: 'application']
+All projects evaluated.
+Task name matched 'compileJava'
+Selected primary task 'compileJava' from project :
+Tasks to be executed: [task ':compileJava']
+Tasks that were excluded: []
+Resolve mutations for :compileJava (Thread[Execution worker,5,main]) started.
+:compileJava (Thread[Execution worker,5,main]) started.
+
+> Task :compileJava FAILED
+
+[Incubating] Problems report is available at: file:///C:/Users/Chris/Antigravity/ProyectoSistemasOperativos/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Error while evaluating property 'javaCompiler' of task ':compileJava'.
+   > Failed to calculate the value of task ':compileJava' property 'javaCompiler'.
+      > Cannot find a Java installation on your machine (Windows 11 10.0 amd64) matching: {languageVersion=24, vendor=any vendor, implementation=vendor-specific, nativeImageCapable=false}. Toolchain download repositories have not been configured.
+
+* Try:
+> Learn more about toolchain auto-detection and auto-provisioning at https://docs.gradle.org/8.14.1/userguide/toolchains.html#sec:auto_detection.
+> Learn more about toolchain repositories at https://docs.gradle.org/8.14.1/userguide/toolchains.html#sub:download_repositories.
+> Run with --stacktrace option to get the stack trace.
+> Run with --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 806ms
+1 actionable task: 1 executed
+Watched directory hierarchies: [C:\Users\Chris\Antigravity\ProyectoSistemasOperativos]

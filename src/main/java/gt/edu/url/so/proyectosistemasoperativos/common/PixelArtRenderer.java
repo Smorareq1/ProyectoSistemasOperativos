@@ -1320,11 +1320,38 @@ public class PixelArtRenderer implements Disposable {
         fill(x + 1, y, 1, h, VLT_GRAY);               // left shine
         fill(x + 2, y, 1, h, LT_GRAY);                // body
         fill(x + 3, y, 1, h, web("#404040"));   // right shadow
-        // Joint rings
+    /** Joint rings */
         for (int jy = y + 6; jy < y + h - 2; jy += 12) {
             fill(x, jy, 4, 1, GRAY);
             dot(x + 1, jy, LT_GRAY);
         }
+    }
+
+    /** UI Box Frame — HD-2D ornate frame for sidebars/menus */
+    public void drawUIBox(int x, int y, int w, int h) {
+        // Drop shadow
+        fill(x + 2, y + 2, w, h, rgb(20, 15, 10, 0.45));
+        
+        // Main Background (translucent dark brown/black)
+        fill(x, y, w, h, rgb(26, 16, 24, 0.85));
+
+        // Outer ornate border
+        fill(x, y, w, 1, WOOD_LT);       // top
+        fill(x, y + h - 1, w, 1, WOOD_DK); // bottom
+        fill(x, y, 1, h, WOOD_LT);       // left
+        fill(x + w - 1, y, 1, h, WOOD_DK); // right
+        
+        // Inner inset border
+        fill(x + 2, y + 2, w - 4, 1, WOOD_DK);
+        fill(x + 2, y + h - 3, w - 4, 1, darker(WOOD_DK));
+        fill(x + 2, y + 2, 1, h - 4, WOOD_DK);
+        fill(x + w - 3, y + 2, 1, h - 4, darker(WOOD_DK));
+
+        // Corner golden rivets
+        dot(x + 1, y + 1, GOLD);
+        dot(x + w - 2, y + 1, GOLD);
+        dot(x + 1, y + h - 2, DK_GOLD);
+        dot(x + w - 2, y + h - 2, DK_GOLD);
     }
 
     /** Gauge/meter on wall — HD-2D with chrome bezel and LED indicator */
