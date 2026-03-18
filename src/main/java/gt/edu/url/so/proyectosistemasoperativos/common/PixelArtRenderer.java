@@ -1648,6 +1648,162 @@ public class PixelArtRenderer implements Disposable {
     }
 
     // ═══════════════════════════════════════
+    //  OS THEME (SERVER ROOM)
+    // ═══════════════════════════════════════
+
+    /** Draw a server rack with animated blinking LEDs */
+    public void drawServerRack(int x, int y, int frame, Color activityColor) {
+        // Shadow
+        fill(x + 1, y + 2, 16, 26, rgb(10, 10, 15, 0.5));
+        
+        // Main metal cabinet
+        fill(x, y, 16, 26, web("#2a2b30")); // dark metal
+        fill(x, y, 16, 1, web("#42444c")); // top highlight
+        fill(x, y, 1, 26, web("#35373e")); // left highlight
+        fill(x + 15, y, 1, 26, web("#1c1d22")); // right shadow
+        
+        // Vents / Grille at top & bottom
+        for (int vy = y + 2; vy < y + 6; vy += 2) {
+            fill(x + 2, vy, 12, 1, web("#111115"));
+        }
+        for (int vy = y + 21; vy < y + 25; vy += 2) {
+            fill(x + 2, vy, 12, 1, web("#111115"));
+        }
+        
+        // Server blades (units)
+        for (int bladeY = y + 7; bladeY < y + 19; bladeY += 3) {
+            fill(x + 2, bladeY, 12, 2, web("#3a3c45")); // blade unit
+            fill(x + 2, bladeY + 2, 12, 1, web("#111115")); // gap shadow
+            
+            // Handle
+            fill(x + 3, bladeY, 1, 2, web("#50525d"));
+            fill(x + 12, bladeY, 1, 2, web("#50525d"));
+            
+            // Blinking LEDs
+            int ledHash = (x * 13 + bladeY * 29 + frame) % 20;
+            if (ledHash < 8) {
+                dot(x + 6, bladeY + 1, GREEN);
+                dot(x + 8, bladeY + 1, activityColor);
+            } else if (ledHash < 14) {
+                dot(x + 6, bladeY + 1, activityColor);
+                dot(x + 10, bladeY + 1, GREEN);
+            } else {
+                dot(x + 8, bladeY + 1, GREEN);
+                dot(x + 10, bladeY + 1, activityColor);
+            }
+        }
+    }
+
+    /** Draw a high-tech wall with glowing circuit lines or neon strips */
+    public void drawTechWall(int sx, int sy, int w, int h) {
+        // Base dark metal
+        for (int y = sy; y < sy + h; y++) {
+            double t = (double)(y - sy) / Math.max(h, 1);
+            int v = (int)(0x1e - t * 0x0a);
+            fill(sx, y, w, 1, rgb(v, v, v + 5)); // slightly blue-ish dark gray
+        }
+        
+        // Wall panels (hexagons or large squares with bevels)
+        int pW = 16, pH = 12;
+        for (int y = sy; y < sy + h; y += pH + 1) {
+            for (int x = sx; x < sx + w; x += pW + 1) {
+                int dw = Math.min(pW, sx + w - x);
+                int dh = Math.min(pH, sy + h - y);
+                if (dw > 0 && dh > 0) {
+                    fill(x, y, dw, 1, web("#2a2c35")); // panel top
+                    fill(x, y, 1, dh, web("#2a2c35")); // panel left
+                    fill(x + dw - 1, y, 1, dh, web("#121215")); // right shadow
+                    fill(x, y + dh - 1, dw, 1, web("#121215")); // bottom shadow
+                    
+                    // Detail: occasional cooling vent
+                    if (Math.abs(x * y) % 11 == 0 && dw > 6 && dh > 6) {
+                        fill(x + 2, y + 2, 4, 4, web("#0f0f13"));
+                        fill(x + 2, y + 3, 4, 1, web("#08080a"));
+                        fill(x + 2, y + 5, 4, 1, web("#08080a"));
+                    }
+                }
+            }
+        }
+        // Horizontal glowing strip in the middle of the wall
+        int midY = sy + h / 2;
+        fill(sx, midY, w, 2, BLACK);
+        fill(sx, midY + 1, w, 1, web("#004060"));
+        for (int x = sx; x < sx + w; x += 8) {
+            fill(x + 2, midY + 1, 4, 1, LT_TEAL);
+        }
+    }
+
+    /** Draw a raised access floor for server rooms */
+    public void drawServerFloor(int sx, int sy, int w, int h) {
+        // Base floor material
+        for (int y = sy; y < sy + h; y++) {
+            fill(sx, y, w, 1, web("#30333a"));
+        }
+        
+        // Tiles
+        int tW = 12, tH = 8;
+        for (int y = sy; y < sy + h; y += tH) {
+            int off = ((y - sy) / tH % 2) * (tW / 2);
+            for (int x = sx - off; x < sx + w; x += tW) {
+                int dx = Math.max(x, sx);
+                int dw = Math.min(x + tW, sx + w) - dx;
+                int dh = Math.min(tH, sy + h - y);
+                if (dw > 0 && dh > 0) {
+                    // Bevel and shadow
+                    fill(dx, y, dw, 1, web("#424650"));
+                    fill(dx, y, 1, dh, web("#3b3e48"));
+                    fill(dx, y + dh - 1, dw, 1, web("#1a1b1f"));
+                    if (dw > 1) fill(dx + dw - 1, y, 1, dh, web("#1a1b1f"));
+                    
+                    // Occasional tile details (vent holes)
+                    int tileHash = (x * 7 + Math.abs((int)y) * 13) % 15;
+                    if (tileHash == 0 && dw > 6 && dh > 4) {
+                        for (int vx = dx + 2; vx < dx + dw - 2; vx += 2) {
+                            for (int vy = y + 2; vy < y + dh - 2; vy += 2) {
+                                dot(vx, vy, BLACK);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Grout lines
+        for (int y = sy; y < sy + h; y += tH) {
+            fill(sx, y, w, 1, web("#15161a"));
+        }
+    }
+
+    /** Draw a monitor / terminal screen displaying code */
+    public void drawMonitor(int x, int y, int frame) {
+        // Stand and base
+        fill(x + 4, y + 9, 2, 3, web("#606060"));
+        fill(x + 2, y + 12, 6, 1, web("#404040"));
+        // Monitor bezel
+        fill(x, y, 10, 9, web("#202020"));
+        fill(x, y, 10, 1, web("#404040")); // top shine
+        fill(x + 9, y, 1, 9, BLACK); // right shade
+        fill(x, y + 8, 10, 1, BLACK); // bottom shade
+        // Screen interior
+        fill(x + 1, y + 1, 8, 7, web("#001a00")); // dark green background
+        
+        // Animated rolling code (Matrix-style or lines of code)
+        int offset = (frame / 3) % 4;
+        for (int codeY = y + 2; codeY < y + 7; codeY += 2) {
+            for (int codeX = x + 2; codeX < x + 8; codeX += 2) {
+                int h = (codeX * 17 + codeY * 11 + offset) % 10;
+                if (h > 4) {
+                    dot(codeX, codeY, LT_GREEN);
+                } else if (h > 1) {
+                    dot(codeX, codeY, GREEN);
+                }
+            }
+        }
+        
+        // Power LED
+        dot(x + 8, y + 8, GREEN);
+    }
+
+    // ═══════════════════════════════════════
     //  DISPOSE
     // ═══════════════════════════════════════
 
@@ -1691,6 +1847,45 @@ public class PixelArtRenderer implements Disposable {
     }
 
     /** Set the ambient light color and intensity. */
+    /**
+     * Draw a spotlight cone from top (narrow) to bottom (wide).
+     * Simulates a stage flood-light / spot-light effect.
+     * @param cx       center X of the spotlight at the bottom (target)
+     * @param topWidth width of the beam at the very top (small, e.g. 4-8)
+     * @param botWidth width of the beam at the bottom (large, e.g. 60-120)
+     * @param topY     Y pixel where the beam starts (top of screen = 0)
+     * @param botY     Y pixel where the beam ends
+     * @param color    colour of the light
+     * @param maxAlpha peak opacity at the centre of the beam (0-1)
+     */
+    public void drawSpotlight(int cx, int topWidth, int botWidth, int topY, int botY, Color color, float maxAlpha) {
+        int h = botY - topY;
+        if (h <= 0) return;
+
+        for (int row = 0; row < h; row++) {
+            float t = (float) row / h;                       // 0 at top, 1 at bottom
+            int halfW = (int) (topWidth / 2f + t * (botWidth - topWidth) / 2f); // lerp width
+            int y = topY + row;
+
+            // Fade alpha: strong in top-center, softer as it fans out
+            float rowAlpha = maxAlpha * (1f - t * 0.55f);    // slightly dimmer toward floor
+
+            for (int dx = -halfW; dx <= halfW; dx++) {
+                int px = cx + dx;
+                // Gaussian-ish falloff from center of beam
+                float distNorm = (float) Math.abs(dx) / Math.max(halfW, 1);
+                float a = rowAlpha * (1f - distNorm * distNorm); // quadratic falloff
+                if (a > 0.005f) {
+                    dot(px, y, rgb(
+                            (int) (color.r * 255), 
+                            (int) (color.g * 255), 
+                            (int) (color.b * 255), 
+                            a));
+                }
+            }
+        }
+    }
+
     public void setAmbientLight(float r, float g, float b, float a) {
         rayHandler.setAmbientLight(r, g, b, a);
     }
