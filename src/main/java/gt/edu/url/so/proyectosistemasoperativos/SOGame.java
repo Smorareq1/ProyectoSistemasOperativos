@@ -1,6 +1,7 @@
 package gt.edu.url.so.proyectosistemasoperativos;
 
 import com.badlogic.gdx.Game;
+import gt.edu.url.so.proyectosistemasoperativos.common.AudioManager;
 
 public class SOGame extends Game {
 
@@ -19,5 +20,11 @@ public class SOGame extends Game {
 
     public void showProducerConsumer() {
         setScreen(new PCScreen(this));
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        AudioManager.getInstance().dispose();
     }
 }

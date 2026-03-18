@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import gt.edu.url.so.proyectosistemasoperativos.common.AudioManager;
 import gt.edu.url.so.proyectosistemasoperativos.common.GameLogger;
 import gt.edu.url.so.proyectosistemasoperativos.common.PixelArtRenderer;
 import gt.edu.url.so.proyectosistemasoperativos.common.PostProcessingPipeline;
@@ -142,6 +143,8 @@ public class PCScreen extends ScreenAdapter {
         setupCallbacks();
         buildSkin();
         buildUI();
+        
+        AudioManager.getInstance().playMusic("pc_music.mp3", true);
     }
 
     private FreeTypeFontGenerator loadFontGen() {

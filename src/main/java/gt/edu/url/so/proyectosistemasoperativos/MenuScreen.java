@@ -18,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import gt.edu.url.so.proyectosistemasoperativos.common.AudioManager;
 import gt.edu.url.so.proyectosistemasoperativos.common.PixelArtRenderer;
 import gt.edu.url.so.proyectosistemasoperativos.common.PostProcessingPipeline;
 
@@ -151,6 +152,9 @@ public class MenuScreen extends ScreenAdapter {
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 
+        // Audio
+        AudioManager.getInstance().playMusic("menu_music.mp3", true);
+
         // Layout - centered panel with dark backdrop
         Table root = new Table();
         root.setFillParent(true);
@@ -170,6 +174,7 @@ public class MenuScreen extends ScreenAdapter {
         pcBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                AudioManager.getInstance().playButtonSound();
                 game.showProducerConsumer();
             }
         });
@@ -178,6 +183,7 @@ public class MenuScreen extends ScreenAdapter {
         dpBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                AudioManager.getInstance().playButtonSound();
                 game.showDiningPhilosophers();
             }
         });
