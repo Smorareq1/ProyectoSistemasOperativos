@@ -53,16 +53,17 @@ public class MenuScreen extends ScreenAdapter {
         // HD-2D: cinematic menu with bloom on lights
         postFx.setFocusCenter(0.45f);
         postFx.setFocusRange(0.35f);
-        postFx.setDofStrength(0.30f);   // more DoF in menu is fine - cinematic
+        postFx.setDofStrength(0.35f);   // stronger DoF in menu — cinematic
         postFx.setDofRadius(2.5f);
-        postFx.setBloomIntensity(0.35f);
-        postFx.setBloomThreshold(0.42f);
-        postFx.setBloomRadius(2.0f);
-        postFx.setWarmth(1.25f);
-        postFx.setContrast(1.12f);
-        postFx.setSaturation(1.20f);
-        postFx.setVignetteRadius(0.65f); // strong vignette for cinematic
-        postFx.setVignetteSoftness(0.40f);
+        postFx.setBloomIntensity(0.50f); // stronger bloom for visible glow
+        postFx.setBloomThreshold(0.32f); // catch more light sources
+        postFx.setBloomRadius(2.5f);
+        postFx.setBloomPasses(3);
+        postFx.setWarmth(1.28f);
+        postFx.setContrast(1.15f);
+        postFx.setSaturation(1.22f);
+        postFx.setVignetteRadius(0.62f); // strong vignette for cinematic
+        postFx.setVignetteSoftness(0.42f);
 
         // Generate fonts - much larger for readability
         FreeTypeFontGenerator gen = null;
@@ -303,6 +304,22 @@ public class MenuScreen extends ScreenAdapter {
 
         // Dust particles
         c.drawDustParticles(pw, ph, frame, 40);
+
+        // === DYNAMIC POINT LIGHTS (box2dLight) ===
+        Color torchLightDyn = new Color(1f, 0.7f, 0.3f, 1f);
+        Color moonLightDyn = new Color(0.45f, 0.55f, 0.9f, 1f);
+
+        // Torch lights (flickering)
+        for (int tx = 20; tx < pw; tx += 60) {
+            c.addFlickeringLight(tx + 1, wallEnd - 16, 40, torchLightDyn, 0.6f, frame);
+        }
+
+        // Moonlight from windows
+        c.addPointLight(61, wallEnd - 30, 32, moonLightDyn, 0.3f);
+        c.addPointLight(pw - 61, wallEnd - 30, 32, moonLightDyn, 0.3f);
+
+        // Warm central light (behind menu panel)
+        c.addPointLight(pw / 2f, ph / 2f, 80, new Color(1f, 0.8f, 0.5f, 1f), 0.3f);
     }
 
     @Override

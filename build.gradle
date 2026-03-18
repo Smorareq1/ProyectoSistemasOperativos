@@ -8,6 +8,9 @@ version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven { url "https://jitpack.io" }
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    maven { url "https://oss.sonatype.org/content/repositories/releases/" }
 }
 
 ext {
@@ -15,10 +18,17 @@ ext {
     junitVersion = '5.10.0'
 }
 
-sourceCompatibility = '21'
-targetCompatibility = '21'
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(24)
+    }
+}
+
+sourceCompatibility = '24'
+targetCompatibility = '24'
 
 tasks.withType(JavaCompile) {
+    options.release = 24
     options.encoding = 'UTF-8'
 }
 
@@ -36,6 +46,10 @@ dependencies {
     // FreeType font rendering
     implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
     implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+    // Box2D for physics and Box2D Lights for dynamic shadows/lighting
+    implementation "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+    implementation "com.badlogicgames.box2dlights:box2dlights:1.5"
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")

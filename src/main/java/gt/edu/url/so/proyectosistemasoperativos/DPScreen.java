@@ -114,14 +114,15 @@ public class DPScreen extends ScreenAdapter {
         postFx.setFocusRange(0.40f);   // wide sharp center
         postFx.setDofStrength(0.25f);   // gentle tilt-shift at edges only
         postFx.setDofRadius(2.0f);
-        postFx.setBloomIntensity(0.30f); // bloom makes lights glow beautifully in dark scenes
-        postFx.setBloomThreshold(0.45f); // catch torch/fire light
-        postFx.setBloomRadius(2.0f);
-        postFx.setWarmth(1.25f);        // warm candlelit feel
-        postFx.setContrast(1.12f);      // deeper shadows
-        postFx.setSaturation(1.20f);    // rich colors
-        postFx.setVignetteRadius(0.70f); // noticeable vignette for mood
-        postFx.setVignetteSoftness(0.45f);
+        postFx.setBloomIntensity(0.50f); // strong bloom for torch/fire glow
+        postFx.setBloomThreshold(0.30f); // lower threshold for more light pickup
+        postFx.setBloomRadius(2.5f);
+        postFx.setBloomPasses(3);        // wider, softer glow
+        postFx.setWarmth(1.30f);        // warm candlelit feel
+        postFx.setContrast(1.15f);      // deeper shadows
+        postFx.setSaturation(1.22f);    // rich colors
+        postFx.setVignetteRadius(0.68f); // noticeable vignette for mood
+        postFx.setVignetteSoftness(0.48f);
 
         FreeTypeFontGenerator gen = loadFontGen();
         FreeTypeFontGenerator.FreeTypeFontParameter p = new FreeTypeFontGenerator.FreeTypeFontParameter();
@@ -660,6 +661,51 @@ public class DPScreen extends ScreenAdapter {
         renderer.drawAmbientOcclusion(wallH + 2, pw, 8, 0.15f);
         renderer.drawFogBand(wallH - 3, 12, pw, new Color(0.8f, 0.65f, 0.4f, 1f), 0.06f);
         renderer.drawDustParticles(pw, ph, animFrame, 35);
+
+        // === DYNAMIC POINT LIGHTS (box2dLight) ===
+        Color torchLightDyn = new Color(1f, 0.7f, 0.3f, 1f);
+        Color fireLightDyn = new Color(1f, 0.45f, 0.12f, 1f);
+        Color moonLightDyn = new Color(0.45f, 0.55f, 0.9f, 1f);
+
+        // Torch lights (flickering)
+        renderer.addFlickeringLight(21, wallH - 24, 42, torchLightDyn, 0.65f, animFrame);
+        renderer.addFlickeringLight(pw / 2f - 49, wallH - 22, 35, torchLightDyn, 0.50f, animFrame);
+        renderer.addFlickeringLight(pw / 2f + 46, wallH - 22, 35, torchLightDyn, 0.50f, animFrame);
+        renderer.addFlickeringLight(pw - 24, wallH - 24, 42, torchLightDyn, 0.65f, animFrame);
+
+        // Fireplace — large warm glow
+        renderer.addFlickeringLight(pw / 2f, wallH - 8, 65, fireLightDyn, 0.85f, animFrame);
+        // Firelight pooling on floor
+        renderer.addPointLight(pw / 2f, wallH + 20, 55, fireLightDyn, 0.35f);
+
+        // Moonlight from windows (cool blue, static)
+        renderer.addPointLight(66, wallH - 30, 35, moonLightDyn, 0.3f);
+        renderer.addPointLight(pw - 66, wallH - 30, 35, moonLightDyn, 0.3f);
+
+        // Table center light
+        renderer.addPointLight(cx, cy, tableR + 10, torchLightDyn, 0.2f);
+
+        // Philosopher eating glow
+        for (int i = 0; i < N; i++) {
+            int philFrame = 0;
+            if (running && controller != null) {
+                int[] snap = controller.getSnapshot();
+                if (snap != null && i < N) {
+                    EstadoFilosofo est = EstadoFilosofo.values()[snap[i]];
+                    philFrame = switch (est) {
+                        case PENSANDO -> 0;
+                        case ESPERANDO -> 2;
+                        case COMIENDO -> 1;
+                    };
+                }
+            }
+            if (philFrame == 1) { // Eating — warm glow
+                double angle = 2 * Math.PI * i / N - Math.PI / 2;
+                float plx = cx + (float)(philR * Math.cos(angle));
+                float ply = cy + (float)(philR * Math.sin(angle));
+                renderer.addPointLight(plx, ply, 15, new Color(1f, 0.8f, 0.4f, 1f), 0.4f);
+            }
+        }
     }
 
     private void updateStateFromController() {

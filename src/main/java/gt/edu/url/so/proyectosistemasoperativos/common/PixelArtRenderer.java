@@ -11,6 +11,10 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.math.Vector2;
+import box2dLight.PointLight;
+import box2dLight.RayHandler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,6 +44,11 @@ public class PixelArtRenderer implements Disposable {
     // Buffered text entries (drawn after ShapeRenderer ends)
     private final List<TextEntry> textBuffer = new ArrayList<>();
 
+    // Dynamic Lighting
+    private final World world;
+    private final RayHandler rayHandler;
+    private final java.util.List<PointLight> activeLights = new ArrayList<>();
+    
     private static class TextEntry {
         final String text;
         final float x, y;
@@ -140,6 +149,14 @@ public class PixelArtRenderer implements Disposable {
                 fontGenerator = null;
             }
         }
+
+        // Initialize Dynamic Lighting
+        world = new World(new Vector2(0, 0), true);
+        RayHandler.useDiffuseLight(true);
+        rayHandler = new RayHandler(world);
+        rayHandler.setAmbientLight(0.06f, 0.06f, 0.10f, 1.0f); // Cool blue-ish ambient — warm lights contrast beautifully
+        rayHandler.setBlurNum(3);
+        rayHandler.setShadows(true);
     }
 
     public PixelArtRenderer(int width, int height) {
@@ -153,6 +170,7 @@ public class PixelArtRenderer implements Disposable {
     /** Begin rendering a frame. Binds the framebuffer and starts ShapeRenderer. */
     public void beginFrame() {
         textBuffer.clear();
+        clearLights();
         frameBuffer.begin();
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -176,6 +194,10 @@ public class PixelArtRenderer implements Disposable {
             spriteBatch.end();
         }
 
+        // Render dynamic lighting (over drawn pixel art)
+        rayHandler.setCombinedMatrix(camera);
+        rayHandler.updateAndRender();
+
         frameBuffer.end();
     }
 
@@ -187,6 +209,16 @@ public class PixelArtRenderer implements Disposable {
     /** Returns the FrameBuffer itself. */
     public FrameBuffer getFrameBuffer() {
         return frameBuffer;
+    }
+
+    /** Returns the RayHandler to allow adding lights from Screens */
+    public RayHandler getRayHandler() {
+        return rayHandler;
+    }
+    
+    /** Returns the Physics World */
+    public World getWorld() {
+        return world;
     }
 
     // ═══════════════════════════════════════
@@ -1066,7 +1098,7 @@ public class PixelArtRenderer implements Disposable {
     //  DECORATIONS
     // ═══════════════════════════════════════
 
-    /** Torch on wall — HD-2D with multi-tone flame, glow, and embers */
+    /** Torch on wall — HD-2D with multi-tone flame, glow, embers, and smoke wisps */
     public void drawTorch(int x, int y, int frame) {
         // Wall bracket (metallic)
         fill(x, y + 7, 3, 1, DK_GRAY);
@@ -1074,33 +1106,67 @@ public class PixelArtRenderer implements Disposable {
         // Torch handle
         fill(x + 1, y + 4, 1, 3, DARK_BROWN);
         dot(x + 1, y + 4, BROWN);
-        // Ambient glow on wall behind flame
-        dot(x - 1, y + 2, rgb(255, 160, 40, 0.15));
-        dot(x + 3, y + 2, rgb(255, 160, 40, 0.15));
-        dot(x, y - 1, rgb(255, 200, 80, 0.1));
-        dot(x + 2, y - 1, rgb(255, 200, 80, 0.1));
-        // Multi-tone flame animation
-        if (frame % 4 < 2) {
-            // Flame shape 1 — tall
-            fill(x, y + 2, 3, 2, ORANGE);          // outer flame
-            fill(x, y + 1, 3, 1, DK_ORANGE);        // mid flame
-            fill(x + 1, y, 1, 3, GOLD);             // inner flame
-            dot(x + 1, y + 1, web("#fff0c0")); // white-hot core
-            dot(x + 1, y, web("#ffe880"));      // bright tip
-            // Ember sparks
-            dot(x + 2, y - 1, rgb(255, 100, 30, 0.7));
-            dot(x - 1, y, rgb(255, 140, 40, 0.5));
-        } else {
-            // Flame shape 2 — wide
-            fill(x, y + 2, 3, 2, ORANGE);
-            fill(x, y + 1, 3, 2, DK_ORANGE);
-            fill(x + 1, y + 1, 1, 2, GOLD);
-            dot(x + 1, y + 1, web("#fff0c0")); // white-hot core
-            dot(x, y, GOLD);
-            dot(x + 2, y, RED);
-            // Ember sparks (different positions)
-            dot(x, y - 1, rgb(255, 120, 30, 0.6));
-            dot(x + 3, y, rgb(255, 80, 20, 0.4));
+        // Ambient glow on wall behind flame (richer)
+        fill(x - 1, y, 5, 4, rgb(255, 160, 40, 0.10));
+        dot(x - 2, y + 1, rgb(255, 120, 30, 0.06));
+        dot(x + 4, y + 1, rgb(255, 120, 30, 0.06));
+        // 4-frame flame animation
+        int flamePhase = frame % 4;
+        switch (flamePhase) {
+            case 0 -> { // Tall narrow flame
+                fill(x, y + 2, 3, 2, ORANGE);
+                fill(x, y + 1, 3, 1, DK_ORANGE);
+                fill(x + 1, y - 1, 1, 4, GOLD);
+                dot(x + 1, y, web("#fffce0")); // white-hot core
+                dot(x + 1, y - 1, web("#ffe880"));
+                dot(x + 2, y - 1, rgb(255, 100, 30, 0.7));
+                dot(x - 1, y, rgb(255, 140, 40, 0.5));
+            }
+            case 1 -> { // Wide flare
+                fill(x - 1, y + 2, 4, 2, ORANGE);
+                fill(x, y + 1, 3, 2, DK_ORANGE);
+                fill(x + 1, y, 1, 3, GOLD);
+                dot(x + 1, y + 1, web("#fffce0"));
+                dot(x, y - 1, GOLD);
+                dot(x + 2, y, RED);
+                dot(x - 1, y - 1, rgb(255, 80, 20, 0.5));
+                dot(x + 3, y + 1, rgb(255, 120, 30, 0.4));
+            }
+            case 2 -> { // Medium with lean right
+                fill(x, y + 2, 3, 2, ORANGE);
+                fill(x + 1, y + 1, 2, 2, DK_ORANGE);
+                fill(x + 1, y, 1, 3, GOLD);
+                dot(x + 1, y, web("#fffce0"));
+                dot(x + 2, y - 1, web("#ffe880"));
+                dot(x, y - 1, rgb(255, 140, 40, 0.6));
+                dot(x + 3, y, rgb(255, 100, 30, 0.35));
+            }
+            case 3 -> { // Small flicker
+                fill(x, y + 2, 3, 2, DK_ORANGE);
+                fill(x, y + 1, 3, 1, ORANGE);
+                fill(x + 1, y + 1, 1, 2, GOLD);
+                dot(x + 1, y + 1, web("#fff0c0"));
+                dot(x, y, GOLD);
+                dot(x + 2, y - 1, rgb(255, 120, 40, 0.5));
+            }
+        }
+        // Floating ember sparks (rise and drift)
+        for (int e = 0; e < 3; e++) {
+            int emFrame = (frame + e * 7) % 16;
+            if (emFrame < 8) {
+                int emX = x + 1 + (int)(Math.sin(emFrame * 0.8 + e * 2.1) * 2);
+                int emY = y - 1 - emFrame;
+                float emAlpha = 1.0f - emFrame / 8.0f;
+                dot(emX, emY, rgb(255, (int)(120 + e * 30), 30, emAlpha * 0.7));
+            }
+        }
+        // Smoke wisps above flame
+        int smokeFrame = (frame + (int)(x * 0.7)) % 20;
+        if (smokeFrame < 6) {
+            int sX = x + 1 + (int)(Math.sin(smokeFrame * 0.5) * 1.5);
+            int sY = y - 3 - smokeFrame;
+            float sAlpha = (1.0f - smokeFrame / 6.0f) * 0.2f;
+            dot(sX, sY, new Color(0.7f, 0.65f, 0.55f, sAlpha));
         }
     }
 
@@ -1360,46 +1426,76 @@ public class PixelArtRenderer implements Disposable {
         dot(x + 14, y + 5, BRICK_LT);
         dot(x + 1, y + 7, BRICK_LT);
         dot(x + 14, y + 9, BRICK_LT);
-        // Firebox interior
+        // Mortar lines
+        dot(x + 3, y + 5, MORTAR);
+        dot(x + 12, y + 8, MORTAR);
+        // Firebox interior with soot gradient
         fill(x + 3, y + 4, 10, 10, BLACK);
         fill(x + 3, y + 4, 10, 1, web("#1a1018")); // soot line
-        // Ambient glow on interior walls
-        fill(x + 3, y + 8, 1, 6, web("#3a1808"));
-        fill(x + 12, y + 8, 1, 6, web("#3a1808"));
-        // Fire animation with multi-tone flames
-        if (frame % 3 == 0) {
-            fill(x + 5, y + 8, 6, 6, ORANGE);            // outer
-            fill(x + 6, y + 7, 4, 5, GOLD);               // mid
-            fill(x + 7, y + 6, 2, 3, web("#fff0b0")); // white-hot core
-            dot(x + 7, y + 5, web("#ffe8a0"));       // flame tip
-            dot(x + 5, y + 8, RED);                        // ember
-            dot(x + 10, y + 9, DK_ORANGE);
-        } else if (frame % 3 == 1) {
-            fill(x + 4, y + 9, 8, 5, ORANGE);
-            fill(x + 5, y + 7, 6, 5, GOLD);
-            fill(x + 6, y + 7, 4, 3, web("#fff0b0"));
-            dot(x + 8, y + 6, web("#ffe8a0"));
-            dot(x + 4, y + 10, RED);
-            dot(x + 11, y + 10, DK_ORANGE);
-        } else {
-            fill(x + 5, y + 8, 6, 6, ORANGE);
-            fill(x + 6, y + 7, 4, 4, GOLD);
-            fill(x + 7, y + 7, 2, 2, web("#fff0b0"));
-            dot(x + 6, y + 6, web("#ffe8a0"));
-            dot(x + 9, y + 7, RED);
-            dot(x + 5, y + 9, DK_ORANGE);
+        fill(x + 3, y + 5, 10, 1, web("#120c08")); // deeper soot
+        // Ambient glow on interior walls (warmer, brighter)
+        fill(x + 3, y + 7, 1, 7, web("#4a2010"));
+        fill(x + 12, y + 7, 1, 7, web("#4a2010"));
+        fill(x + 3, y + 12, 10, 2, web("#2a1008")); // hearth floor glow
+        // Fire animation with 4 tones: white core -> yellow -> orange -> red
+        int firePhase = frame % 4;
+        switch (firePhase) {
+            case 0 -> {
+                fill(x + 4, y + 8, 8, 6, RED);              // outer red
+                fill(x + 5, y + 7, 6, 6, ORANGE);           // orange
+                fill(x + 6, y + 6, 4, 5, GOLD);              // yellow
+                fill(x + 7, y + 5, 2, 4, web("#fffce0")); // white-hot core
+                dot(x + 7, y + 4, web("#fff8d0"));       // flame tip
+                dot(x + 8, y + 5, web("#fff0b0"));
+            }
+            case 1 -> {
+                fill(x + 4, y + 9, 8, 5, RED);
+                fill(x + 5, y + 7, 6, 6, ORANGE);
+                fill(x + 6, y + 7, 4, 4, GOLD);
+                fill(x + 7, y + 6, 2, 3, web("#fffce0"));
+                dot(x + 8, y + 5, web("#fff8d0"));
+                dot(x + 6, y + 6, web("#fff0b0"));
+            }
+            case 2 -> {
+                fill(x + 5, y + 8, 6, 6, RED);
+                fill(x + 5, y + 7, 6, 5, ORANGE);
+                fill(x + 6, y + 6, 4, 5, GOLD);
+                fill(x + 7, y + 6, 2, 3, web("#fffce0"));
+                dot(x + 6, y + 5, web("#fff8d0"));
+            }
+            case 3 -> {
+                fill(x + 4, y + 8, 8, 6, RED);
+                fill(x + 5, y + 8, 6, 5, ORANGE);
+                fill(x + 6, y + 7, 4, 4, GOLD);
+                fill(x + 7, y + 7, 2, 2, web("#fffce0"));
+                dot(x + 7, y + 6, web("#fff8d0"));
+                dot(x + 9, y + 7, web("#fff0b0"));
+            }
         }
-        // Floating ember sparks above fire
-        int emX = x + 6 + (frame % 5);
-        int emY = y + 4 - (frame % 3);
-        if (emY >= y + 4) dot(emX, emY, rgb(255, 120, 30, 0.6));
-        // Logs with detail
+        // Floating ember sparks above fire (multiple particles)
+        for (int e = 0; e < 5; e++) {
+            int emFrame = (frame + e * 5) % 20;
+            if (emFrame < 10) {
+                int emX = x + 6 + (int)(Math.sin(emFrame * 0.6 + e * 1.7) * 3);
+                int emY = y + 4 - emFrame;
+                float emAlpha = (1.0f - emFrame / 10.0f) * 0.8f;
+                if (emY >= y) {
+                    dot(emX, emY, rgb(255, (int)(80 + e * 25), 20, emAlpha));
+                }
+            }
+        }
+        // Logs with more detail
         fill(x + 4, y + 12, 8, 2, WOOD_DK);
         fill(x + 5, y + 11, 6, 1, WOOD2);
         dot(x + 5, y + 12, WOOD2);        // log end grain
         dot(x + 11, y + 12, WOOD2);
-        // Glow on hearth floor
-        fill(x + 5, y + 13, 6, 1, rgb(200, 100, 20, 0.3));
+        dot(x + 7, y + 12, web("#3a1808")); // charred center
+        dot(x + 8, y + 12, web("#3a1808"));
+        // Glowing embers on logs
+        dot(x + 6, y + 13, rgb(255, 80, 20, 0.6));
+        dot(x + 9, y + 13, rgb(255, 100, 30, 0.5));
+        // Glow on hearth floor (brighter)
+        fill(x + 4, y + 13, 8, 1, rgb(200, 100, 20, 0.4));
     }
 
     /** Draw a simple particle/spark */
@@ -1460,17 +1556,21 @@ public class PixelArtRenderer implements Disposable {
     }
 
     /**
-     * Draw a soft light glow around a point (for torches, lamps).
-     * The glow is drawn as concentric semi-transparent rectangles that
-     * the bloom post-processing will pick up and spread beautifully.
+     * Draw a soft circular light glow around a point (for torches, lamps).
+     * Uses circular falloff for natural-looking light halos.
+     * The glow brightness feeds into the bloom post-processing pipeline.
      */
     public void drawLightGlow(int cx, int cy, int radius, Color lightColor, float intensity) {
-        for (int r = 1; r <= radius; r += 2) {
-            float falloff = 1.0f - (float)r / radius;
-            float alpha = falloff * falloff * intensity; // quadratic falloff
-            if (alpha < 0.01f) continue;
-            Color c = new Color(lightColor.r, lightColor.g, lightColor.b, alpha);
-            fill(cx - r, cy - r, r * 2, r * 2, c);
+        for (int dy = -radius; dy <= radius; dy += 2) {
+            for (int dx = -radius; dx <= radius; dx += 2) {
+                float dist = (float) Math.sqrt(dx * dx + dy * dy);
+                if (dist > radius) continue;
+                float falloff = 1.0f - dist / radius;
+                float alpha = falloff * falloff * falloff * intensity; // cubic falloff for softer edges
+                if (alpha < 0.008f) continue;
+                Color c = new Color(lightColor.r, lightColor.g, lightColor.b, alpha);
+                fill(cx + dx, cy + dy, 2, 2, c);
+            }
         }
     }
 
@@ -1521,8 +1621,55 @@ public class PixelArtRenderer implements Disposable {
     //  DISPOSE
     // ═══════════════════════════════════════
 
+    // ═══════════════════════════════════════
+    //  DYNAMIC LIGHTING HELPERS
+    // ═══════════════════════════════════════
+
+    /** Remove all dynamic lights from the previous frame. */
+    public void clearLights() {
+        for (PointLight light : activeLights) {
+            light.remove();
+        }
+        activeLights.clear();
+    }
+
+    /**
+     * Add a soft point light at pixel-art coordinates.
+     * @param px pixel-art X
+     * @param py pixel-art Y
+     * @param radius radius in pixel-art units
+     * @param color light color
+     * @param intensity 0-1 alpha multiplier
+     */
+    public void addPointLight(float px, float py, float radius, Color color, float intensity) {
+        Color c = new Color(color.r, color.g, color.b, intensity);
+        PointLight pl = new PointLight(rayHandler, 64, c, radius * S, px * S, py * S);
+        pl.setSoftnessLength(radius * S * 0.6f);
+        pl.setXray(true); // No physics bodies to collide with
+        activeLights.add(pl);
+    }
+
+    /**
+     * Add a flickering point light (for torches/fire).
+     * @param frame current animation frame for flicker calculation
+     */
+    public void addFlickeringLight(float px, float py, float radius, Color color, float intensity, int frame) {
+        float flicker = 0.85f + 0.15f * (float) Math.sin(frame * 0.7 + px * 0.3)
+                       + 0.08f * (float) Math.sin(frame * 1.3 + py * 0.5);
+        float flickerRadius = radius * (0.9f + 0.1f * (float) Math.sin(frame * 0.9 + px * 0.2));
+        addPointLight(px, py, flickerRadius, color, intensity * flicker);
+    }
+
+    /** Set the ambient light color and intensity. */
+    public void setAmbientLight(float r, float g, float b, float a) {
+        rayHandler.setAmbientLight(r, g, b, a);
+    }
+
     @Override
     public void dispose() {
+        clearLights();
+        rayHandler.dispose();
+        world.dispose();
         shapeRenderer.dispose();
         spriteBatch.dispose();
         frameBuffer.dispose();

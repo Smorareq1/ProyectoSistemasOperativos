@@ -103,14 +103,15 @@ public class PCScreen extends ScreenAdapter {
         postFx.setFocusRange(0.40f);
         postFx.setDofStrength(0.22f);
         postFx.setDofRadius(2.0f);
-        postFx.setBloomIntensity(0.35f); // sparks and ore glow in dark
-        postFx.setBloomThreshold(0.40f);
-        postFx.setBloomRadius(2.0f);
-        postFx.setWarmth(1.18f);
-        postFx.setContrast(1.15f);      // deep industrial contrast
-        postFx.setSaturation(1.18f);
-        postFx.setVignetteRadius(0.68f);
-        postFx.setVignetteSoftness(0.42f);
+        postFx.setBloomIntensity(0.50f); // stronger bloom for torch/spark glow
+        postFx.setBloomThreshold(0.32f); // lower threshold captures more light sources
+        postFx.setBloomRadius(2.5f);
+        postFx.setBloomPasses(3);        // extra pass for wider, softer glow
+        postFx.setWarmth(1.22f);
+        postFx.setContrast(1.18f);      // deep industrial contrast
+        postFx.setSaturation(1.20f);
+        postFx.setVignetteRadius(0.66f);
+        postFx.setVignetteSoftness(0.44f);
 
         FreeTypeFontGenerator gen = loadFontGen();
         FreeTypeFontGenerator.FreeTypeFontParameter p = new FreeTypeFontGenerator.FreeTypeFontParameter();
@@ -684,6 +685,36 @@ public class PCScreen extends ScreenAdapter {
         renderer.drawAmbientOcclusion(wallH + 2, pw, 8, 0.18f);
         renderer.drawFogBand(wallH - 3, 10, pw, new Color(0.6f, 0.5f, 0.35f, 1f), 0.05f);
         renderer.drawDustParticles(pw, ph, animFrame, 30);
+
+        // === DYNAMIC POINT LIGHTS (box2dLight) ===
+        Color torchLightDyn = new Color(1f, 0.7f, 0.3f, 1f);
+        Color fireLightDyn = new Color(1f, 0.5f, 0.15f, 1f);
+
+        // Torch lights (flickering)
+        renderer.addFlickeringLight(16, wallH - 26, 45, torchLightDyn, 0.7f, animFrame);
+        renderer.addFlickeringLight(pw / 3f, wallH - 24, 38, torchLightDyn, 0.55f, animFrame);
+        renderer.addFlickeringLight(pw * 2f / 3, wallH - 24, 38, torchLightDyn, 0.55f, animFrame);
+        renderer.addFlickeringLight(pw - 19, wallH - 26, 45, torchLightDyn, 0.7f, animFrame);
+
+        // Mine entrance glow
+        renderer.addPointLight(18, lineY - 10, 25, fireLightDyn, 0.4f);
+
+        // Miner spark light when mining
+        if (minerState == 1) {
+            renderer.addFlickeringLight(54, lineY + 2, 18, new Color(1f, 0.8f, 0.2f, 1f), 0.6f, animFrame);
+        }
+
+        // Conveyor area light
+        renderer.addPointLight(convX + convW / 2f, lineY, 50, new Color(0.8f, 0.7f, 0.5f, 1f), 0.2f);
+
+        // Robot station lights (glow when active)
+        for (int i = 0; i < 3; i++) {
+            int rx = rsX + 13;
+            int ry = rsY + 13 + i * robotSpacing;
+            Color rColor = robotColors[i][2];
+            float rIntensity = (robotStates[i] == 1) ? 0.5f : 0.15f;
+            renderer.addPointLight(rx, ry, 18, rColor, rIntensity);
+        }
     }
 
     private void drawBufferOnCanvas(int convX, int lineY) {

@@ -78,9 +78,18 @@ void main() {
         color = mix(color, mix(caColor, dof, dofFactor), 0.3);
     }
 
-    // 3. Bloom (additive, warm-tinted)
-    vec3 warmBloom = bloom * vec3(1.1, 1.0, 0.85); // slightly warm bloom
-    color += warmBloom * u_bloomIntensity;
+    // 3. Bloom with light scattering (downward pooling + warm tint)
+    vec3 warmBloom = bloom * vec3(1.15, 1.0, 0.80); // warm-tinted bloom
+    // Light scattering: sample bloom slightly below for gravity effect
+    vec2 scatterUV = uv + vec2(0.0, 0.003);
+    vec3 scatteredBloom = texture2D(u_bloom, scatterUV).rgb * vec3(1.1, 0.95, 0.75);
+    vec3 finalBloom = mix(warmBloom, scatteredBloom, 0.3);
+    color += finalBloom * u_bloomIntensity;
+
+    // Extra bloom color bleed in dark areas (warm light fills shadows)
+    float sceneLum = dot(scene, vec3(0.2126, 0.7152, 0.0722));
+    float bloomBleed = (1.0 - sceneLum) * 0.15;
+    color += bloom * vec3(1.2, 0.9, 0.6) * bloomBleed * u_bloomIntensity;
 
     // 4. Vignette (stronger, more cinematic)
     vec2 vigUV = uv - 0.5;
@@ -97,9 +106,9 @@ void main() {
 
     // Shadows get even warmer (like indoor firelight)
     float lum = dot(color, vec3(0.2126, 0.7152, 0.0722));
-    float shadowWarmth = (1.0 - lum) * 0.06;
+    float shadowWarmth = (1.0 - lum) * 0.08;
     color.r += shadowWarmth;
-    color.g += shadowWarmth * 0.3;
+    color.g += shadowWarmth * 0.35;
 
     // Contrast (S-curve for more pleasing look)
     color = (color - 0.5) * u_contrast + 0.5;
@@ -111,13 +120,12 @@ void main() {
     // 6. Film grain (very subtle, adds texture)
     color += filmGrain(uv, u_time);
 
-    // 7. Tone mapping (filmic, preserves highlight detail)
-    // ACES-inspired
+    // 7. Tone mapping (ACES-inspired, tuned for warm highlights)
     vec3 x = max(vec3(0.0), color);
     color = (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14);
 
     // 8. Subtle color lift in shadows (cinematic look)
-    color = max(color, vec3(0.012, 0.010, 0.018)); // slight blue-ish lift in blacks
+    color = max(color, vec3(0.015, 0.012, 0.022)); // slight blue-ish lift in blacks
 
     gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
 }
