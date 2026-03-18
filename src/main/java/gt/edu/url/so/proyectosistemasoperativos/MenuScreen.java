@@ -329,19 +329,71 @@ public class MenuScreen extends ScreenAdapter {
         c.drawServerFloor(0, wallEnd, pw, ph - wallEnd);
         c.fill(0, wallEnd - 1, pw, 2, BLACK); // separator divider
 
-        // Wall decorations - Monitors & Wires
+        // ── CEILING PIPES & CONDUITS ──
+        // Horizontal conduit pipes running along the top
+        c.fill(0, 3, pw, 2, web("#35373e"));
+        c.fill(0, 3, pw, 1, web("#42444c")); // highlight
+        c.fill(0, 8, pw, 1, web("#25272e"));
+        // Vertical drops from conduit
+        for (int pipeX = 30; pipeX < pw; pipeX += 55) {
+            c.fill(pipeX, 5, 2, 18, web("#30323a"));
+            c.fill(pipeX, 5, 1, 18, web("#3e4048")); // highlight
+        }
+
+        // ── WALL DECORATIONS ──
+        // Monitors
         c.drawMonitor(20, wallEnd - 40, frame);
         c.drawMonitor(pw - 30, wallEnd - 40, frame + 15);
+        // Extra monitors scattered
+        c.drawMonitor(pw / 3 - 15, wallEnd - 38, frame + 7);
+        c.drawMonitor(pw * 2 / 3 + 5, wallEnd - 38, frame + 22);
         
-        // Horizontal glowing strip in wall (TechWall has it, but let's add some visual markers)
+        // Gauges row
         c.drawGauge(pw / 2 - 20, wallEnd - 20, (frame % 20) / 20.0);
         c.drawGauge(pw / 2 + 10, wallEnd - 20, 0.85);
+        c.drawGauge(pw / 4 - 5, wallEnd - 18, 0.4);
+        c.drawGauge(pw * 3 / 4 + 5, wallEnd - 18, 0.65);
 
-        // Server racks standing on floor (background decor)
+        // ── CABLE BUNDLES on wall ──
+        // Hanging cables between monitors
+        Color cableColor = web("#1a1c25");
+        for (int cx = 45; cx < pw - 45; cx += 70) {
+            for (int cy = wallEnd - 45; cy < wallEnd - 30; cy += 3) {
+                c.fill(cx, cy, 1, 3, cableColor);
+            }
+            // Gentle droop
+            c.fill(cx, wallEnd - 32, 8, 1, cableColor);
+            c.fill(cx + 8, wallEnd - 31, 1, 4, cableColor);
+        }
+
+        // ── SERVER RACKS (more of them) ──
         c.drawServerRack(12, wallEnd - 15, frame, GREEN);
         c.drawServerRack(pw - 28, wallEnd - 15, frame + 10, TEAL);
         c.drawServerRack(pw / 4, wallEnd - 5, frame + 5, ORANGE);
         c.drawServerRack(pw * 3 / 4, wallEnd - 5, frame + 8, LT_TEAL);
+        // Extra racks to fill midground
+        c.drawServerRack(pw / 2 - 30, wallEnd - 10, frame + 3, web("#40c0ff"));
+        c.drawServerRack(pw / 2 + 15, wallEnd - 10, frame + 13, web("#ff6040"));
+
+        // ── FLOOR PANEL DETAILS ──
+        // Glowing floor seams
+        for (int fx = 0; fx < pw; fx += 24) {
+            c.fill(fx, wallEnd + 10, 1, ph - wallEnd - 10, web("#151720"));
+        }
+        for (int fy = wallEnd + 20; fy < ph; fy += 18) {
+            c.fill(0, fy, pw, 1, web("#151720"));
+        }
+
+        // ── SCROLLING DATA TICKER on wall ──
+        // A glowing horizontal strip with "scrolling" dots
+        int tickerY = wallEnd - 8;
+        c.fill(0, tickerY, pw, 3, web("#0c0e14"));
+        int tickerPos = (frame * 3) % pw;
+        for (int ti = 0; ti < 8; ti++) {
+            int tx = (tickerPos + ti * 12) % pw;
+            c.dot(tx, tickerY + 1, web("#30ff80"));
+            c.dot(tx + 2, tickerY + 1, web("#20c060"));
+        }
 
         // ==========================================
         // LEFT SIDE: Producer - Consumer Concept
@@ -349,19 +401,22 @@ public class MenuScreen extends ScreenAdapter {
         int pcX = 30;
         int pcY = wallEnd + 25;
         
-        // El "Buffer" es la cinta transportadora
-        c.drawConveyor(pcX + 25, pcY + 5, 60, frame * 2);
-        
-        // Productor (Robot Teal)
-        c.drawRobot(pcX, pcY, (frame % 8 < 4) ? 0 : 1, TEAL, DK_TEAL, LT_TEAL);
-        
-        // Consumidor (Robot Orange)
-        c.drawRobot(pcX + 90, pcY, (frame % 8 < 4) ? 1 : 0, ORANGE, DK_ORANGE, GOLD);
-        
-        // "Productos" (Bloques de datos) moviendose en el buffer
-        int prodOffset = (frame * 2) % 30;
-        c.drawOreBlock(pcX + 30 + prodOffset, pcY - 2, LT_GREEN);
-        c.drawOreBlock(pcX + 50 + prodOffset, pcY - 2, LT_GREEN);
+        if (pcHover) {
+            // ANIMATED: conveyor moves, robots animate, products scroll
+            c.drawConveyor(pcX + 25, pcY + 5, 60, frame * 2);
+            c.drawRobot(pcX, pcY, (frame % 8 < 4) ? 0 : 1, TEAL, DK_TEAL, LT_TEAL);
+            c.drawRobot(pcX + 90, pcY, (frame % 8 < 4) ? 1 : 0, ORANGE, DK_ORANGE, GOLD);
+            int prodOffset = (frame * 2) % 30;
+            c.drawOreBlock(pcX + 30 + prodOffset, pcY - 2, LT_GREEN);
+            c.drawOreBlock(pcX + 50 + prodOffset, pcY - 2, LT_GREEN);
+        } else {
+            // STATIC: idle scene, no animation
+            c.drawConveyor(pcX + 25, pcY + 5, 60, 0);
+            c.drawRobot(pcX, pcY, 0, TEAL, DK_TEAL, LT_TEAL);
+            c.drawRobot(pcX + 90, pcY, 0, ORANGE, DK_ORANGE, GOLD);
+            c.drawOreBlock(pcX + 40, pcY - 2, web("#406050"));
+            c.drawOreBlock(pcX + 58, pcY - 2, web("#406050"));
+        }
 
         // ==========================================
         // RIGHT SIDE: Dining Philosophers Concept
@@ -369,24 +424,79 @@ public class MenuScreen extends ScreenAdapter {
         int dpX = pw - 120;
         int dpY = wallEnd + 15;
         
-        // La mesa compartida
+        // Table is always visible
         c.drawRoundTable(dpX + 45, dpY + 15, 25);
-        
-        // Filósofo 1: Pensando (Azul)
-        c.drawPhilosopher(dpX + 20, dpY - 5, 0, web("#4060c0"), web("#304890"), DARK_BROWN, frame % 4 < 2 ? 0 : -1);
-        
-        // Filósofo 2: Comiendo (Rojo)
-        c.drawPhilosopher(dpX + 58, dpY - 5, 1, web("#c04040"), web("#903030"), web("#202020"), 0);
-        
-        // Filósofo 3: Esperando (Verde)
-        c.drawPhilosopher(dpX + 40, dpY + 10, 2, web("#40a060"), web("#308040"), GOLD, 0);
 
-        // Platos y Recursos (Tenedores/Palillos)
-        c.drawPlate(dpX + 30, dpY + 8, true);  // Plato del pensador (lleno pero no come)
-        c.drawPlate(dpX + 50, dpY + 8, false); // Plato del que está comiendo (vacío/comiendo)
-        c.drawPlate(dpX + 40, dpY + 18, true); // Plato del que espera
+        if (dpHover) {
+            // ANIMATED: philosophers move/think
+            c.drawPhilosopher(dpX + 20, dpY - 5, 0, web("#4060c0"), web("#304890"), DARK_BROWN, frame % 4 < 2 ? 0 : -1);
+            c.drawPhilosopher(dpX + 58, dpY - 5, 1, web("#c04040"), web("#903030"), web("#202020"), frame % 6 < 3 ? 0 : 1);
+            c.drawPhilosopher(dpX + 40, dpY + 10, 2, web("#40a060"), web("#308040"), GOLD, frame % 5 < 2 ? 0 : -1);
+        } else {
+            // STATIC: philosophers in idle pose (all sitting still)
+            c.drawPhilosopher(dpX + 20, dpY - 5, 0, web("#303850"), web("#252a3a"), web("#1a1a1a"), 0);
+            c.drawPhilosopher(dpX + 58, dpY - 5, 1, web("#503030"), web("#3a2020"), web("#1a1a1a"), 0);
+            c.drawPhilosopher(dpX + 40, dpY + 10, 2, web("#305038"), web("#203828"), web("#1a1a1a"), 0);
+        }
 
-        // === LIGHT EFFECTS - the heart of HD-2D ===
+        // Plates always visible
+        c.drawPlate(dpX + 30, dpY + 8, true);
+        c.drawPlate(dpX + 50, dpY + 8, false);
+        c.drawPlate(dpX + 40, dpY + 18, true);
+
+        // ==========================================
+        // CENTER: Robot & Philosopher Interaction
+        // ==========================================
+        int midX = pw / 2 + 20;
+        int midY = wallEnd + 22;
+
+        // Shared terminal/console between them
+        c.fill(midX - 8, midY + 5, 16, 10, web("#1e2030")); // console body
+        c.fill(midX - 8, midY + 5, 16, 1, web("#3a3e50"));  // top edge
+        c.fill(midX - 7, midY + 6, 14, 6, web("#0a1420"));  // screen
+        // Screen content — blinking cursor
+        if (frame % 6 < 3) {
+            c.fill(midX - 5, midY + 8, 4, 1, web("#30ff80"));
+            c.dot(midX + 1, midY + 8, web("#60ffa0"));
+        } else {
+            c.fill(midX - 5, midY + 8, 6, 1, web("#30ff80"));
+        }
+        // Little status LEDs on console
+        c.dot(midX - 6, midY + 13, GREEN);
+        c.dot(midX - 4, midY + 13, web("#ff4040"));
+        c.dot(midX + 5, midY + 13, TEAL);
+
+        // Robot on the left side facing right →
+        c.drawRobot(midX - 28, midY, (frame % 10 < 5) ? 0 : 1, web("#50b0d0"), web("#3888a0"), web("#80d8f0"));
+
+        // Philosopher on the right side facing left ←
+        c.drawPhilosopher(midX + 16, midY - 3, 1, web("#c09050"), web("#907040"), web("#e0c080"), frame % 8 < 4 ? 0 : -1);
+
+        // Speech/thought bubbles (animated toggle)
+        if (frame % 12 < 6) {
+            // Robot says: binary data — bubble 22px wide to fit "0110"
+            int bx = midX - 30, by = midY - 18, bw = 22, bh = 9;
+            c.fill(bx, by, bw, bh, web("#1a2a3a"));
+            c.fill(bx, by, bw, 1, web("#30506a"));       // top border
+            c.fill(bx, by, 1, bh, web("#30506a"));        // left border
+            c.fill(bx + bw - 1, by, 1, bh, web("#10182a")); // right shadow
+            c.fill(bx, by + bh - 1, bw, 1, web("#10182a")); // bot shadow
+            c.drawText("0110", bx + 1, by, web("#40e0a0"), 4);
+            c.dot(midX - 18, by + bh, web("#1a2a3a")); // tail
+        } else {
+            // Philosopher thinks: "?!" — bubble 18px wide
+            int bx = midX + 16, by = midY - 21, bw = 18, bh = 9;
+            c.fill(bx, by, bw, bh, web("#3a2a1a"));
+            c.fill(bx, by, bw, 1, web("#6a5030"));        // top border
+            c.fill(bx, by, 1, bh, web("#6a5030"));         // left border
+            c.fill(bx + bw - 1, by, 1, bh, web("#2a1a0a")); // right shadow
+            c.fill(bx, by + bh - 1, bw, 1, web("#2a1a0a")); // bot shadow
+            c.drawText("?!", bx + 4, by, web("#f0c060"), 4);
+            c.dot(midX + 22, by + bh, web("#3a2a1a")); // tail
+        }
+
+        // Subtle glow around the center interaction
+        c.drawLightGlow(midX, midY + 8, 30, new Color(0.3f, 0.5f, 0.8f, 1f), 0.1f);
         Color neonBlue = new Color(0.2f, 0.6f, 1.0f, 1f);
         Color neonGreen = new Color(0.2f, 1.0f, 0.4f, 1f);
 
