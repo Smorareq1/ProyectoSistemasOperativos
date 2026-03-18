@@ -267,6 +267,9 @@ public class PixelArtRenderer implements Disposable {
                 param.size = size;
                 param.mono = true;
                 param.flip = true; // We use a Y-flipped camera
+                param.borderWidth = Math.max(1f, S / 1.5f); // Scale border with zoom (e.g., 2px at 3x scale)
+                param.borderColor = Color.BLACK;
+                param.borderStraight = true; // Essential for sharp pixel-art shadows
                 font = fontGenerator.generateFont(param);
             } else {
                 font = new BitmapFont(true); // default font, flipped

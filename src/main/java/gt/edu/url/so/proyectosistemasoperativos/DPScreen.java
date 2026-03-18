@@ -14,7 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Align;
+
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import gt.edu.url.so.proyectosistemasoperativos.common.GameLogger;
 import gt.edu.url.so.proyectosistemasoperativos.common.PixelArtRenderer;
@@ -80,7 +80,7 @@ public class DPScreen extends ScreenAdapter {
     private Table leftSidebar;
     private Table rightSidebar;
     private Table bottomBar;
-    private static final int MAX_LOG = 100;
+    private static final int MAX_LOG = 20;
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     // Scale 3 = 366x250 pixel art space (more detail than scale 4)

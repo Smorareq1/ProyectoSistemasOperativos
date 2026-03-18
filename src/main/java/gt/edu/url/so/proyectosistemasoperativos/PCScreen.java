@@ -14,7 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Align;
+
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import gt.edu.url.so.proyectosistemasoperativos.common.GameLogger;
 import gt.edu.url.so.proyectosistemasoperativos.common.PixelArtRenderer;
@@ -66,7 +66,7 @@ public class PCScreen extends ScreenAdapter {
     private final List<String> logMessages = new ArrayList<>();
     private Label logLabel;
     private ScrollPane logScrollPane;
-    private static final int MAX_LOG = 50;
+    private static final int MAX_LOG = 15;
     private static final int BUFFER_SIZE = 12;
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
@@ -117,20 +117,23 @@ public class PCScreen extends ScreenAdapter {
         FreeTypeFontGenerator.FreeTypeFontParameter p = new FreeTypeFontGenerator.FreeTypeFontParameter();
         p.size = 18;
         p.color = Color.WHITE;
-        p.borderWidth = 2;
-        p.borderColor = new Color(0.1f, 0.05f, 0.0f, 1f);
+        p.borderWidth = 1.5f;
+        p.borderColor = Color.BLACK;
+        p.borderStraight = true; // Pixel-art sharp shadow
         uiFont = gen.generateFont(p);
         p.size = 14;
         p.color = new Color(1f, 0.95f, 0.85f, 1f);
-        p.borderWidth = 1.5f;
-        p.borderColor = new Color(0.1f, 0.05f, 0.0f, 1f);
+        p.borderWidth = 1f;
+        p.borderColor = Color.BLACK;
+        p.borderStraight = true;
         smallFont = gen.generateFont(p);
 
         // Smaller font for logs — fits more text
         p.size = 10;
         p.color = new Color(0.9f, 0.88f, 0.78f, 1f);
         p.borderWidth = 1f;
-        p.borderColor = new Color(0.08f, 0.04f, 0.0f, 1f);
+        p.borderColor = Color.BLACK;
+        p.borderStraight = true;
         logFont = gen.generateFont(p);
 
         gen.dispose();
@@ -218,26 +221,30 @@ public class PCScreen extends ScreenAdapter {
         Label.LabelStyle lsUI = new Label.LabelStyle(uiFont, Color.WHITE);
         skin.add("ui", lsUI);
 
-        // Log font: default LibGDX monospace-like font, compact and very readable
-        BitmapFont defaultFont = new BitmapFont();
-        defaultFont.setColor(new Color(0.85f, 0.82f, 0.72f, 1f));
-        defaultFont.getData().setScale(1.0f);
-        Label.LabelStyle logStyle = new Label.LabelStyle(defaultFont, new Color(0.85f, 0.82f, 0.72f, 1f));
+        Label.LabelStyle logStyle = new Label.LabelStyle(logFont, logFont.getColor());
         skin.add("log", logStyle);
 
         ScrollPane.ScrollPaneStyle sps = new ScrollPane.ScrollPaneStyle();
         sps.background = new TextureRegionDrawable(new TextureRegion(darkTex));
         skin.add("default", sps);
 
-        // Sidebar background
-        Pixmap pm2 = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pm2.setColor(new Color(0.10f, 0.08f, 0.04f, 0.88f));
-        pm2.fill();
-        Texture sidebarTex = new Texture(pm2);
-        pm2.dispose();
+        // Pixel Art Frame background (NinePatch)
+        Pixmap pmPatch = new Pixmap(12, 12, Pixmap.Format.RGBA8888);
+        pmPatch.setColor(new Color(0.15f, 0.10f, 0.05f, 1f)); // Dark Wood border
+        pmPatch.fill();
+        pmPatch.setColor(new Color(0.06f, 0.04f, 0.02f, 1f)); // Inner darker shadow
+        pmPatch.drawRectangle(2, 2, 8, 8);
+        pmPatch.drawRectangle(3, 3, 6, 6);
+        pmPatch.setColor(new Color(0.10f, 0.08f, 0.04f, 0.92f)); // Inner BG (almost black)
+        pmPatch.fillRectangle(4, 4, 4, 4);
+        
+        Texture patchTex = new Texture(pmPatch);
+        pmPatch.dispose();
+        com.badlogic.gdx.graphics.g2d.NinePatch np = new com.badlogic.gdx.graphics.g2d.NinePatch(patchTex, 4, 4, 4, 4);
+        com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable npDrawable = new com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable(np);
 
         skin.add("panel-bg", new TextureRegionDrawable(new TextureRegion(darkTex)), TextureRegionDrawable.class);
-        skin.add("sidebar-bg", new TextureRegionDrawable(new TextureRegion(sidebarTex)), TextureRegionDrawable.class);
+        skin.add("pixel-frame", npDrawable, com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable.class);
     }
 
     private Label speedLabel;
@@ -246,8 +253,7 @@ public class PCScreen extends ScreenAdapter {
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 
-        TextureRegionDrawable darkBg = skin.get("panel-bg", TextureRegionDrawable.class);
-        TextureRegionDrawable sidebarBg = skin.get("sidebar-bg", TextureRegionDrawable.class);
+        com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable framedBg = skin.get("pixel-frame", com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable.class);
 
         Table root = new Table();
         root.setFillParent(true);
@@ -317,113 +323,158 @@ public class PCScreen extends ScreenAdapter {
             }
         });
 
+        // Semantic button coloring
+        playBtn.getLabel().setColor(Color.GREEN);
+        pauseBtn.getLabel().setColor(Color.YELLOW);
+        stopBtn.getLabel().setColor(new Color(1f, 0.27f, 0.27f, 1f)); // Red
+        importBtn.getLabel().setColor(Color.LIGHT_GRAY);
+
+        // Group speed controls with an internal separator
+        Table speedControls = new Table();
+        speedControls.add(speedDown).padRight(4);
+        speedControls.add(speedLabel).padRight(4);
+        speedControls.add(speedUp).padRight(8);
+
+        // --- DIVIDE TOP BAR IN 3 ZONES (LEFT, CENTER, RIGHT) ---
         Table topBar = new Table();
-        topBar.setBackground(darkBg);
-        topBar.add(backBtn).pad(6).padLeft(10);
-        topBar.add(title).expandX().center().pad(6);
-        topBar.add(speedDown).pad(4);
-        topBar.add(speedLabel).pad(4);
-        topBar.add(speedUp).pad(4);
-        topBar.add(importBtn).pad(6);
-        topBar.add(playBtn).pad(6);
-        topBar.add(pauseBtn).pad(6);
-        topBar.add(stopBtn).pad(6).padRight(10);
-        root.add(topBar).fillX().colspan(2).row();
+        topBar.setBackground(framedBg); // Use pixel art frame!
+
+        Table leftZone = new Table();
+        leftZone.add(backBtn).pad(4).padLeft(8);
+        
+        Table centerZone = new Table();
+        title.setFontScale(1.2f);
+        centerZone.add(title).expandX().center().pad(4);
+        
+        Table rightZone = new Table();
+        rightZone.add(speedControls).pad(2);
+        rightZone.add(createHSeparator()).width(2).height(24).padRight(6); // fake vertical separator horizontal flow
+        rightZone.add(importBtn).pad(4);
+        rightZone.add(playBtn).pad(4);
+        rightZone.add(pauseBtn).pad(4);
+        rightZone.add(stopBtn).pad(4).padRight(8);
+
+        topBar.add(leftZone).expandX().left();
+        topBar.add(centerZone).expandX().center();
+        topBar.add(rightZone).expandX().right();
+        
+        // DO NOT add topBar to root here; it goes at the bottom!
 
         // === Main area: PIXEL ART + BOTTOM PANEL ===
         Table bottomPanel = new Table();
-        bottomPanel.setBackground(sidebarBg);
-        bottomPanel.top().pad(15);
+        bottomPanel.setBackground(framedBg); // Use pixel art frame for the entire HUD!
+        bottomPanel.top().pad(12);
         
         // --- 1. MINER section ---
         Table minerCol = new Table();
         minerCol.top().left();
         Label minerTitle = new Label("PRODUCTOR", skin);
         minerTitle.setColor(GOLD);
-        minerCol.add(minerTitle).left().padBottom(8).row();
+        minerCol.add(minerTitle).center().padBottom(8).row();
 
-        Table minerRow = new Table();
-        minerRow.left();
+        // Grid layout for "label : value" aligning
+        Table minerGrid = new Table();
+        minerGrid.left();
+        
         minerStatusLabel = new Label("IDLE", skin);
         minerStatusLabel.setColor(Color.WHITE);
-        minerRow.add(new Label("Estado: ", skin)).left();
-        minerRow.add(minerStatusLabel).left().row();
-        minerCol.add(minerRow).left().fillX().row();
+        minerGrid.add(new Label("Estado: ", skin)).left().padRight(10).padBottom(4);
+        minerGrid.add(minerStatusLabel).left().padBottom(4).row();
 
-        Table numRow = new Table();
-        numRow.left();
         minerNumberLabel = new Label("-", skin);
         minerNumberLabel.setColor(Color.WHITE);
-        numRow.add(new Label("Ultimo: ", skin)).left();
-        numRow.add(minerNumberLabel).left();
-        minerCol.add(numRow).left().fillX().row();
+        minerGrid.add(new Label("Ultimo: ", skin)).left().padRight(10).padBottom(4);
+        minerGrid.add(minerNumberLabel).left().padBottom(4).row();
 
-        Table bufRow = new Table();
-        bufRow.left();
         bufferCountLabel = new Label("0/" + BUFFER_SIZE, skin);
         bufferCountLabel.setColor(Color.WHITE);
-        bufRow.add(new Label("Buffer: ", skin)).left();
-        bufRow.add(bufferCountLabel).left();
-        minerCol.add(bufRow).left().fillX().row();
+        minerGrid.add(new Label("Buffer: ", skin)).left().padRight(10).padBottom(4);
+        minerGrid.add(bufferCountLabel).left().padBottom(4).row();
 
-        Table fileRow = new Table();
-        fileRow.left();
-        archivoLabel = new Label("numeros.txt (default)", skin);
+        archivoLabel = new Label("numeros.txt (auto)", skin); // (auto avoids too long)
         archivoLabel.setColor(new Color(0.75f, 0.66f, 0.47f, 1f));
-        fileRow.add(new Label("Archivo: ", skin)).left();
-        fileRow.add(archivoLabel).left();
-        minerCol.add(fileRow).left().fillX().row();
+        minerGrid.add(new Label("Archivo: ", skin)).left().padRight(10);
+        minerGrid.add(archivoLabel).left().row();
 
-        bottomPanel.add(minerCol).width(300).padRight(40).top();
+        minerCol.add(minerGrid).left().fillX().row();
+
+        bottomPanel.add(minerCol).expandX().top();
+        bottomPanel.add(createHSeparator()).width(2).expandY().fillY().padLeft(10).padRight(10);
 
         // --- 2. CONSUMERS section ---
         Table consCol = new Table();
         consCol.top().left();
         Label consTitle = new Label("CONSUMIDORES", skin);
         consTitle.setColor(GOLD);
-        consCol.add(consTitle).left().padBottom(8).row();
+        consCol.add(consTitle).center().colspan(3).padBottom(8).row(); // Header spans all sub-cols
 
         String[] names = {"PAR", "IMPAR", "PRIMO"};
         Color[] nameColors = {new Color(0.4f, 0.8f, 0.9f, 1f), new Color(0.5f, 0.9f, 0.4f, 1f), new Color(1f, 0.8f, 0.3f, 1f)};
+        
+        Pixmap blackPm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        blackPm.setColor(Color.BLACK);
+        blackPm.fill();
+        TextureRegionDrawable blackBg = new TextureRegionDrawable(new TextureRegion(new Texture(blackPm)));
+        
         for (int i = 0; i < 3; i++) {
-            Table cRow = new Table();
-            cRow.left();
             Label nameLabel = new Label(names[i] + ":", skin);
             nameLabel.setColor(nameColors[i]);
+            
+            Container<Label> nameContainer = new Container<>(nameLabel);
+            nameContainer.setBackground(blackBg);
+            nameContainer.pad(4, 8, 4, 8); // padding simétrico
+            
             robotScoreLabels[i] = new Label("0", skin);
             robotScoreLabels[i].setColor(Color.WHITE);
             robotStatusLabels[i] = new Label("IDLE", skin);
             robotStatusLabels[i].setColor(new Color(0.6f, 0.6f, 0.6f, 1f));
 
-            cRow.add(nameLabel).left().width(90);
-            cRow.add(robotScoreLabels[i]).left().width(60);
-            cRow.add(robotStatusLabels[i]).left();
-            consCol.add(cRow).left().fillX().padBottom(4).row();
+            // Use table cells natively to align exactly
+            consCol.add(nameContainer).left().padRight(10).padBottom(4); // width auto inline-block feel
+            consCol.add(robotScoreLabels[i]).left().width(50).padBottom(4);
+            consCol.add(robotStatusLabels[i]).left().padBottom(4).row();
         }
 
-        bottomPanel.add(consCol).width(300).padRight(40).top();
+        bottomPanel.add(consCol).expandX().top();
+        bottomPanel.add(createHSeparator()).width(2).expandY().fillY().padLeft(10).padRight(10);
 
         // --- 3. LOG section ---
         Table logCol = new Table();
         logCol.top().left();
         Label logTitle = new Label("LOG", skin);
         logTitle.setColor(GOLD);
-        logCol.add(logTitle).left().padBottom(8).row();
+        logCol.add(logTitle).center().padBottom(8).row();
 
         logLabel = new Label("", skin, "log");
         logLabel.setWrap(true);
         logScrollPane = new ScrollPane(logLabel, skin);
         logScrollPane.setFadeScrollBars(false);
         logScrollPane.setScrollingDisabled(true, false);
-        logCol.add(logScrollPane).expand().fill().padTop(2).row();
+        logCol.add(logScrollPane).height(120).expandX().fillX().padTop(2).row();
 
         bottomPanel.add(logCol).expandX().fill().top();
 
-        // Add pixel art area and bottom panel
-        root.add().expand().fill().row(); // pixel art area (transparent)
-        root.add(bottomPanel).expandX().fillX().height(160);
+        // Add pixel art area (transparent) at top
+        root.add().expand().fill().row(); 
+        
+        // Add the HUD below the pixel art area
+        root.add(bottomPanel).expandX().fillX().pad(4).padBottom(2).row();
+        
+        // Add the former "topBar" as the final control bar at the very bottom
+        root.add(topBar).fillX().padLeft(4).padRight(4).padBottom(4);
 
         stage.addActor(root);
+    }
+
+    private Table createHSeparator() {
+        Pixmap linePm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        linePm.setColor(new Color(0.35f, 0.28f, 0.15f, 0.6f));
+        linePm.fill();
+        Texture lineTex = new Texture(linePm);
+        linePm.dispose();
+        Table sep = new Table();
+        sep.setBackground(new TextureRegionDrawable(new TextureRegion(lineTex)));
+        return sep;
     }
 
     private static final float[] SPEED_OPTIONS = {0.25f, 0.5f, 1f, 2f, 4f};
@@ -504,23 +555,12 @@ public class PCScreen extends ScreenAdapter {
         int workEnd = ph * 68 / 100;     // ~170 px work floor
         int stoneStart = workEnd;
 
-        // === DARK BRICK WALL ===
-        renderer.drawBrickWall(0, 0, pw, wallH);
-        renderer.fill(0, 0, pw, wallH, new Color(0, 0, 0, 0.40f));
-        renderer.fill(0, wallH, pw, 2, BLACK);
-        renderer.drawWarningStripes(0, wallH - 2, pw);
-
-        // === DARK WORK FLOOR ===
-        renderer.fill(0, wallH + 2, pw, workEnd - wallH - 2, web("#3a3428"));
-        // Subtle floor grid
-        for (int gx = 0; gx < pw; gx += 20) {
-            renderer.fill(gx, wallH + 2, 1, workEnd - wallH - 2, new Color(0, 0, 0, 0.15f));
-        }
-
-        // === DARK STONE BASEMENT ===
-        renderer.drawStoneFloor(0, stoneStart, pw, ph - stoneStart);
-        renderer.fill(0, stoneStart, pw, ph - stoneStart, new Color(0, 0, 0, 0.45f));
-        renderer.fill(0, stoneStart - 1, pw, 2, BLACK);
+        // === FULL BRICK WALL BACKGROUND ===
+        // Using built-in pixel-art renderer instead of CSS to maintain LibGDX rendering consistency
+        renderer.drawBrickWall(0, 0, pw, ph);
+        
+        // Darken the brick wall uniformly to ensure sprites and HUD remain highly legible
+        renderer.fill(0, 0, pw, ph, new Color(0, 0, 0, 0.55f));
 
         // === WALL DECORATIONS ===
         renderer.drawTorch(15, wallH - 32, animFrame);
@@ -546,7 +586,7 @@ public class PCScreen extends ScreenAdapter {
         renderer.fill(signX + 1, 5, signW - 2, 18, WOOD1);
         renderer.fill(signX + 2, 6, signW - 4, 16, DK_RED);
         renderer.fill(signX + 2, 6, signW - 4, 4, RED);
-        renderer.drawText("PIXEL FACTORY", signX + 8.0, 8.0, GOLD, 8);
+        renderer.drawText("PIXEL FACTORY", signX + 5.0, 3.5, GOLD, 8);
 
         // === LIGHT EFFECTS (before scene objects) ===
         Color torchLight = new Color(1f, 0.75f, 0.35f, 1f);
@@ -587,8 +627,13 @@ public class PCScreen extends ScreenAdapter {
                 case PRIMO -> COLOR_PRIMO;
             };
             renderer.drawLightGlow(40, lineY - 4, 12, numColor, 0.06f);
-            renderer.drawOreBlock(36, lineY - 10, numColor);
-            renderer.drawText(String.valueOf(lastMinedNumber), 36, lineY - 16.0, WHITE, 6);
+            
+            // Draw the original block MUCH higher
+            renderer.drawOreBlock(36, lineY - 30, numColor);
+            
+            // Draw the number perfectly centered over it, shrinking font explicitly to size 5 to fit inside
+            int numW = String.valueOf(lastMinedNumber).length() * 5 + 1; 
+            renderer.drawText(String.valueOf(lastMinedNumber), 36 + 6 - numW/2.0, lineY - 33.5, WHITE, 5);
         }
 
         // Pipes (miner → conveyor)
@@ -647,9 +692,11 @@ public class PCScreen extends ScreenAdapter {
 
             // Label with dark badge
             String label = robotLabels[i];
-            int badgeW = label.length() * 6 + 4;
-            renderer.fill(rx + 14, ry + 1, badgeW, 8, new Color(0, 0, 0, 0.7f));
-            renderer.drawText(label, rx + 16.0, ry + 2.0, robotColors[i][2], 5);
+            int textW = label.length() * 6 + 2; // Approximate width with border
+            int badgeW = textW + 8; // Nice padded width
+            renderer.fill(rx + 14, ry, badgeW, 11, new Color(0, 0, 0, 0.7f)); // slightly taller box
+            // Shift text upwards and center visually inside the badge
+            renderer.drawText(label, rx + 14 + badgeW/2.0 - textW/2.0, ry - 1.5, robotColors[i][2], 5); 
 
             // State bar
             Color stateColor = switch (robotStates[i]) {
