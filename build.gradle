@@ -1,9 +1,6 @@
 plugins {
     id 'java'
     id 'application'
-    id 'org.javamodularity.moduleplugin' version '1.8.12'
-    id 'org.openjfx.javafxplugin' version '0.0.13'
-    id 'org.beryx.jlink' version '2.25.0'
 }
 
 group 'gt.edu.url.so'
@@ -11,32 +8,48 @@ version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven { url "https://jitpack.io" }
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    maven { url "https://oss.sonatype.org/content/repositories/releases/" }
 }
 
 ext {
+    gdxVersion = '1.12.1'
     junitVersion = '5.10.0'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 sourceCompatibility = '21'
 targetCompatibility = '21'
 
 tasks.withType(JavaCompile) {
+    options.release = 21
     options.encoding = 'UTF-8'
 }
 
 application {
-    mainModule = 'gt.edu.url.so.proyectosistemasoperativos'
-    mainClass = 'gt.edu.url.so.proyectosistemasoperativos.Main'
-}
-
-javafx {
-    version = '21.0.1'
-    modules = ['javafx.controls']
+    mainClass = 'gt.edu.url.so.proyectosistemasoperativos.DesktopLauncher'
 }
 
 dependencies {
-    implementation 'org.kordamp.ikonli:ikonli-javafx:12.3.1'
-    implementation 'org.kordamp.ikonli:ikonli-materialdesign2-pack:12.3.1'
+    // LibGDX core
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+    // LibGDX LWJGL3 backend (desktop)
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    // LibGDX platform natives
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+    // FreeType font rendering
+    implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+    // Box2D for physics and Box2D Lights for dynamic shadows/lighting
+    implementation "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+    implementation "com.badlogicgames.box2dlights:box2dlights:1.5"
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
@@ -46,14 +59,15 @@ test {
     useJUnitPlatform()
 }
 
-jlink {
-    imageZip = project.file("${buildDir}/distributions/app-${javafx.platform.classifier}.zip")
-    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
-    launcher {
-        name = 'app'
+// Ensure resources are on the classpath
+sourceSets {
+    main {
+        resources {
+            srcDirs = ['src/main/resources', 'assets']
+        }
     }
 }
 
-jlinkZip {
-    group = 'distribution'
+run {
+    workingDir = project.projectDir
 }
